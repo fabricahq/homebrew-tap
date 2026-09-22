@@ -9,6 +9,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   prepare:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -21,7 +22,9 @@ jobs:
           cache: false
       - name: Validate the updater
         run: go test -race ./...
-      - name: Generate the formula from the latest published release
+      - name: Generate the formula from the latest attested release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: go run ./cmd/update-code-rules
       - name: Prepare changed formula for publication
         id: formula
@@ -49,22 +52,31 @@ jobs:
     needs: prepare
     if: needs.prepare.outputs.changed == 'true'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    environment: formula-publish
+    permissions: {}
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: code-rules-formula
           path: formula
+      # The publishing App is installed only on this tap. Its key is available
+      # only in the main-branch environment, never to product repositories or PRs.
+      - name: Create a token for formula publication
+        id: publisher
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.FORMULA_APP_CLIENT_ID }}
+          private-key: ${{ secrets.FORMULA_APP_PRIVATE_KEY }}
+          owner: fabricahq
+          repositories: homebrew-tap
+          permission-contents: write
       # This job reads the prepared formula as data. It checks out and executes no tap code.
       - name: Publish the prepared formula
         env:
-          GH_TOKEN: ${{ github.token }}
-          TAP_REPOSITORY: ${{ github.repository }}
+          GH_TOKEN: ${{ steps.publisher.outputs.token }}
         run: |
           set -euo pipefail
-          endpoint="repos/$TAP_REPOSITORY/contents/Formula/code-rules.rb"
-          # Contents API requires the existing file SHA; first installation has no file.
+          endpoint='repos/fabricahq/homebrew-tap/contents/Formula/code-rules.rb'
           if gh api "$endpoint?ref=main" > current.json 2> read-error.txt; then
             sha=$(jq -r .sha current.json)
           elif grep -q 'HTTP 404' read-error.txt; then

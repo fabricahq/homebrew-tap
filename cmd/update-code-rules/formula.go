@@ -144,28 +144,20 @@ func updateFormula(path string, r release, checksums string) (bool, error) {
 		if string(current) == formula {
 			return false, nil
 		}
-		// The migration may update only the generator comment without changing a release's contents.
-		oldHeader := "# Generated from a published Code Rules release; update with scripts/update_code_rules.py.\n"
-		migrated := string(current)
-		if strings.HasPrefix(migrated, oldHeader) {
-			migrated = formulaHeader + "\n" + strings.TrimPrefix(migrated, oldHeader)
+		match := formulaVersionPattern.FindStringSubmatch(string(current))
+		if match == nil {
+			return false, fmt.Errorf("cannot identify the current formula version")
 		}
-		if migrated != formula {
-			match := formulaVersionPattern.FindStringSubmatch(string(current))
-			if match == nil {
-				return false, fmt.Errorf("cannot identify the current formula version")
-			}
-			previous, err := stableVersion("v" + match[1])
-			if err != nil {
-				return false, err
-			}
-			next, err := stableVersion(r.Tag)
-			if err != nil {
-				return false, err
-			}
-			if compareVersions(next, previous) <= 0 {
-				return false, fmt.Errorf("refusing to replace the same or a newer formula version")
-			}
+		previous, err := stableVersion("v" + match[1])
+		if err != nil {
+			return false, err
+		}
+		next, err := stableVersion(r.Tag)
+		if err != nil {
+			return false, err
+		}
+		if compareVersions(next, previous) <= 0 {
+			return false, fmt.Errorf("refusing to replace the same or a newer formula version")
 		}
 	}
 	if err := writeFormula(path, []byte(formula)); err != nil {

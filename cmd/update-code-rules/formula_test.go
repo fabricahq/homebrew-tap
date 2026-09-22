@@ -88,7 +88,7 @@ func TestRejectInvalidReleases(t *testing.T) {
 	}
 }
 
-// TestUpdateFormula verifies idempotence, upgrades, immutable version assets, and migration of the generator comment.
+// TestUpdateFormula verifies idempotence, upgrades, immutable version assets, and refusal of same-version template changes.
 func TestUpdateFormula(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "Formula", "code-rules.rb")
 	r, sums := releaseFixture("1.2.3")
@@ -101,13 +101,6 @@ func TestUpdateFormula(t *testing.T) {
 	original, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
-	}
-	old := strings.Replace(string(original), formulaHeader, "# Generated from a published Code Rules release; update with scripts/update_code_rules.py.", 1)
-	if err := os.WriteFile(path, []byte(old), 0644); err != nil {
-		t.Fatal(err)
-	}
-	if changed, err := updateFormula(path, r, sums); err != nil || !changed {
-		t.Fatal("generator comment migration", changed, err)
 	}
 	for _, kind := range []string{"downgrade", "changed same version", "missing asset"} {
 		t.Run(kind, func(t *testing.T) {

@@ -60,7 +60,7 @@ func readURL(ctx context.Context, client *http.Client, url string) ([]byte, erro
 }
 
 // run leaves the formula untouched when no release exists; other fetch or validation failures are errors.
-func run(ctx context.Context, fetch func(context.Context, string) ([]byte, error), path string, out io.Writer) error {
+func run(ctx context.Context, fetch func(context.Context, string) ([]byte, error), verify func(context.Context, []byte) error, path string, out io.Writer) error {
 	data, err := fetch(ctx, latestRelease)
 	if errors.Is(err, errNotFound) {
 		_, err = fmt.Fprintln(out, "No published stable release yet; leaving the tap unchanged.")
@@ -80,6 +80,9 @@ func run(ctx context.Context, fetch func(context.Context, string) ([]byte, error
 	if err != nil {
 		return err
 	}
+	if err := verify(ctx, sums); err != nil {
+		return fmt.Errorf("verify release provenance: %w", err)
+	}
 	changed, err := updateFormula(path, r, string(sums))
 	if err != nil {
 		return err
@@ -94,7 +97,7 @@ func run(ctx context.Context, fetch func(context.Context, string) ([]byte, error
 
 func main() {
 	fetch := func(ctx context.Context, url string) ([]byte, error) { return readURL(ctx, http.DefaultClient, url) }
-	if err := run(context.Background(), fetch, "Formula/code-rules.rb", os.Stdout); err != nil {
+	if err := run(context.Background(), fetch, verifyChecksums, "Formula/code-rules.rb", os.Stdout); err != nil {
 		fmt.Fprintf(os.Stderr, "Homebrew update failed: %v\n", err)
 		os.Exit(1)
 	}

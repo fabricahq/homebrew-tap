@@ -25,13 +25,37 @@ Keep updater implementations and tests in this tap. Product repositories should 
 
 ## Configure release triggers
 
-Use a dedicated GitHub App for each product's release trigger. Install it only on the tap it needs to trigger, with **Actions: read and write** and **Metadata: read-only** permissions.
+Trusted Fabrica product repositories share the **Fabrica Homebrew Releaser** GitHub App. Install this App only on the tap, with **Actions: read and write** and **Metadata: read-only** permissions. It has no permission to edit repository contents.
 
-Store the App's private key in the product's protected release environment. Generate a short-lived installation token restricted to the tap, then dispatch the product's updater workflow on `main`. Trigger credentials do not need Contents write permission.
+In each product repository, store `HOMEBREW_APP_PRIVATE_KEY` in a release environment restricted to `main`. Set `HOMEBREW_APP_CLIENT_ID` to the shared App's client ID. The release job generates a short-lived token restricted to this tap, then dispatches the product's updater workflow on `main`.
 
-Keep credentials for publishing formulas in the tap. Do not share a trigger App's private key across product repositories: possession of that key grants access to every installation of that App.
+The shared credential can trigger or disrupt any workflow in the tap. Share it only among trusted Fabrica repositories. Use a separate trigger App if a product needs a separate trust boundary.
 
 For an example of the dispatch job, see the [Code Rules release workflow](https://github.com/fabricahq/code-rules/blob/main/.github/workflows/release.yml).
+
+## Protect formula publication
+
+A separate **Fabrica Homebrew Publisher** App owns formula commits. Install it only on this tap with **Contents: read and write** and **Metadata: read-only** permissions. Do not give product repositories its private key.
+
+Store `FORMULA_APP_PRIVATE_KEY` and `FORMULA_APP_CLIENT_ID` in the tap's `formula-publish` environment. Restrict that environment to the `main` branch, with no required reviewers or wait timer.
+
+Require pull requests for changes to `main`, with a bypass for the publishing App. Keep deletion and force-push protection in a separate rule without a bypass. Repository administrators may bypass review requirements through a pull request, but cannot push directly. The publishing credential has repository-wide Contents access; the trusted publishing job limits writes to the intended formula.
+
+The preparation job validates releases without publishing credentials. The publishing job consumes only the prepared formula and checks that the existing formula has not changed. It does not check out or execute repository code.
+
+### Verify release provenance
+
+Each product's release workflow must attest its checksum manifest after its builds and tests pass. Keep signing and release publication in an environment restricted to `main`, and enable immutable releases in the product repository.
+
+Before preparing a formula, the updater verifies the manifest's signature, expected repository, release workflow, and `main` source ref. This ties the archive checksums to the approved release workflow. An unsigned manifest or a different signer must stop publication.
+
+The Code Rules updater uses `gh attestation verify` for this check. Local runs need GitHub CLI and authentication in addition to Go. Signing verifies the source of the manifest; it cannot protect against malicious changes approved into the release workflow itself.
+
+### Activate the setup
+
+Configure both Apps, their environment credentials, and the branch rules before releasing a tool. Merge the product's attestation support and the tap updater before publishing the first release. Adding the environment to a workflow does not create its branch restrictions automatically.
+
+When moving an existing trigger key into an environment, remove the repository-level copy after the release workflow uses that environment. This prevents other branches from using the key.
 
 ## Prepare and validate changes
 

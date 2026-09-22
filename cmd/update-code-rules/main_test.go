@@ -107,14 +107,14 @@ func TestRun(t *testing.T) {
 				return []byte(sums), nil
 			}
 			var out bytes.Buffer
-			err = run(t.Context(), fetch, path, &out)
+			err = run(t.Context(), fetch, func(context.Context, []byte) error { return nil }, path, &out)
 			switch scenario {
 			case "publish":
 				if err != nil || !strings.Contains(out.String(), "Prepared Code Rules v1.2.3") {
 					t.Fatal(err, out.String())
 				}
 				out.Reset()
-				if err := run(t.Context(), fetch, path, &out); err != nil || !strings.Contains(out.String(), "Already current:") {
+				if err := run(t.Context(), fetch, func(context.Context, []byte) error { return nil }, path, &out); err != nil || !strings.Contains(out.String(), "Already current:") {
 					t.Fatal(err, out.String())
 				}
 			case "no release":
