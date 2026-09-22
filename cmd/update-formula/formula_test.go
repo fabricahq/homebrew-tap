@@ -14,10 +14,10 @@ func releaseFixture(version string) (release, string) {
 	no := false
 	r := release{Tag: "v" + version, Draft: &no, Prerelease: &no, PublishedAt: "2026-09-18T00:00:00Z"}
 	var sums strings.Builder
-	for _, target := range targets {
+	for _, target := range testConfig.Platforms {
 		name := fmt.Sprintf("code-rules_%s_%s.tar.gz", version, target)
 		digest := strings.Repeat("a", 64)
-		r.Assets = append(r.Assets, asset{Name: name, Size: 1234, State: "uploaded", Digest: "sha256:" + digest, URL: repository + "/releases/download/" + r.Tag + "/" + name})
+		r.Assets = append(r.Assets, asset{Name: name, Size: 1234, State: "uploaded", Digest: "sha256:" + digest, URL: testConfig.repositoryURL() + "/releases/download/" + r.Tag + "/" + name})
 		fmt.Fprintf(&sums, "%s  %s\n", digest, name)
 	}
 	return r, sums.String()
@@ -26,9 +26,14 @@ func releaseFixture(version string) (release, string) {
 // TestFormulaOutput pins the generated formula to the reference fixture.
 func TestFormulaOutput(t *testing.T) {
 	r, sums := releaseFixture("1.2.3")
-	formula, err := renderFormula(r, sums)
+	formula, err := renderFormula(testConfig, r, sums)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if os.Getenv("UPDATE_GOLDEN") == "1" {
+		if err := os.WriteFile("testdata/code-rules.rb", []byte(formula), 0644); err != nil {
+			t.Fatal(err)
+		}
 	}
 	expected, err := os.ReadFile("testdata/code-rules.rb")
 	if err != nil {
@@ -40,7 +45,7 @@ func TestFormulaOutput(t *testing.T) {
 	for i := range r.Assets {
 		r.Assets[i].Digest = ""
 	}
-	if _, err := renderFormula(r, strings.ReplaceAll(sums, "\n", "\r\n")); err != nil {
+	if _, err := renderFormula(testConfig, r, strings.ReplaceAll(sums, "\n", "\r\n")); err != nil {
 		t.Fatal("optional API digests and CRLF checksums must work", err)
 	}
 }
@@ -69,7 +74,7 @@ func TestRejectInvalidReleases(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			r, sums := releaseFixture("1.2.3")
 			test.change(&r)
-			if _, err := renderFormula(r, sums); err == nil {
+			if _, err := renderFormula(testConfig, r, sums); err == nil {
 				t.Fatal("invalid release accepted")
 			}
 		})
@@ -81,7 +86,7 @@ func TestRejectInvalidReleases(t *testing.T) {
 		{"blank line", sums + "\n"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			if _, err := renderFormula(r, test.sums); err == nil {
+			if _, err := renderFormula(testConfig, r, test.sums); err == nil {
 				t.Fatal("invalid checksums accepted")
 			}
 		})
@@ -92,10 +97,10 @@ func TestRejectInvalidReleases(t *testing.T) {
 func TestUpdateFormula(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "Formula", "code-rules.rb")
 	r, sums := releaseFixture("1.2.3")
-	if changed, err := updateFormula(path, r, sums); err != nil || !changed {
+	if changed, err := updateFormula(testConfig, path, r, sums); err != nil || !changed {
 		t.Fatal(changed, err)
 	}
-	if changed, err := updateFormula(path, r, sums); err != nil || changed {
+	if changed, err := updateFormula(testConfig, path, r, sums); err != nil || changed {
 		t.Fatal(changed, err)
 	}
 	original, err := os.ReadFile(path)
@@ -116,7 +121,7 @@ func TestUpdateFormula(t *testing.T) {
 			case "missing asset":
 				candidate.Assets = nil
 			}
-			if _, err := updateFormula(path, candidate, checksums); err == nil {
+			if _, err := updateFormula(testConfig, path, candidate, checksums); err == nil {
 				t.Fatal("unsafe update accepted")
 			}
 			after, err := os.ReadFile(path)
@@ -126,16 +131,16 @@ func TestUpdateFormula(t *testing.T) {
 		})
 	}
 	newer, checksums := releaseFixture("1.3.0")
-	if changed, err := updateFormula(path, newer, checksums); err != nil || !changed {
+	if changed, err := updateFormula(testConfig, path, newer, checksums); err != nil || !changed {
 		t.Fatal(changed, err)
 	}
 	if err := os.WriteFile(path, []byte("unknown formula"), 0644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := updateFormula(path, newer, checksums); err == nil {
+	if _, err := updateFormula(testConfig, path, newer, checksums); err == nil {
 		t.Fatal("overwrote unrecognized formula")
 	}
-	leftovers, err := filepath.Glob(filepath.Join(filepath.Dir(path), ".code-rules-*.rb"))
+	leftovers, err := filepath.Glob(filepath.Join(filepath.Dir(path), ".formula-*.rb"))
 	if err != nil || len(leftovers) != 0 {
 		t.Fatal("staging files remain", leftovers, err)
 	}

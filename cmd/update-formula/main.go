@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,7 +14,6 @@ import (
 	"time"
 )
 
-const latestRelease = "https://api.github.com/repos/fabricahq/code-rules/releases/latest"
 const metadataLimit = 1024 * 1024
 
 var errNotFound = errors.New("release metadata not found")
@@ -60,8 +60,8 @@ func readURL(ctx context.Context, client *http.Client, url string) ([]byte, erro
 }
 
 // run leaves the formula untouched when no release exists; other fetch or validation failures are errors.
-func run(ctx context.Context, fetch func(context.Context, string) ([]byte, error), verify func(context.Context, []byte) error, path string, out io.Writer) error {
-	data, err := fetch(ctx, latestRelease)
+func run(ctx context.Context, config toolConfig, fetch func(context.Context, string) ([]byte, error), verify func(context.Context, []byte) error, path string, out io.Writer) error {
+	data, err := fetch(ctx, config.latestURL())
 	if errors.Is(err, errNotFound) {
 		_, err = fmt.Fprintln(out, "No published stable release yet; leaving the tap unchanged.")
 		return err
@@ -76,14 +76,14 @@ func run(ctx context.Context, fetch func(context.Context, string) ([]byte, error
 	if err := validateRelease(r); err != nil {
 		return err
 	}
-	sums, err := fetch(ctx, repository+"/releases/download/"+r.Tag+"/SHA256SUMS")
+	sums, err := fetch(ctx, config.repositoryURL()+"/releases/download/"+r.Tag+"/SHA256SUMS")
 	if err != nil {
 		return err
 	}
 	if err := verify(ctx, sums); err != nil {
 		return fmt.Errorf("verify release provenance: %w", err)
 	}
-	changed, err := updateFormula(path, r, string(sums))
+	changed, err := updateFormula(config, path, r, string(sums))
 	if err != nil {
 		return err
 	}
@@ -91,13 +91,37 @@ func run(ctx context.Context, fetch func(context.Context, string) ([]byte, error
 	if changed {
 		message = "Prepared"
 	}
-	_, err = fmt.Fprintf(out, "%s Code Rules %s\n", message, r.Tag)
+	_, err = fmt.Fprintf(out, "%s %s %s\n", message, config.Name, r.Tag)
 	return err
 }
 
 func main() {
+	tool := flag.String("tool", "", "tool definition in tools/<name>.json")
+	check := flag.Bool("check-all", false, "report version drift for all public tools without modifying formulas")
+	plan := flag.Bool("matrix", false, "print the configured platform test matrix without fetching a release")
+	flag.Parse()
 	fetch := func(ctx context.Context, url string) ([]byte, error) { return readURL(ctx, http.DefaultClient, url) }
-	if err := run(context.Background(), fetch, verifyChecksums, "Formula/code-rules.rb", os.Stdout); err != nil {
+	ctx := context.Background()
+	var err error
+	if *check {
+		if *tool != "" || *plan {
+			err = fmt.Errorf("check-all cannot be combined with tool or matrix")
+		} else {
+			err = checkAll(ctx, ".", fetch, os.Stdout)
+		}
+	} else {
+		var config toolConfig
+		config, err = loadConfig(".", *tool)
+		if err == nil {
+			if *plan {
+				err = json.NewEncoder(os.Stdout).Encode(config.matrix())
+			} else {
+				verify := func(ctx context.Context, sums []byte) error { return verifyChecksums(ctx, config, sums) }
+				err = run(ctx, config, fetch, verify, config.formulaPath("."), os.Stdout)
+			}
+		}
+	}
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Homebrew update failed: %v\n", err)
 		os.Exit(1)
 	}

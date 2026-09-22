@@ -32,7 +32,7 @@ brew uninstall code-rules
 
 ## For maintainers
 
-Each tool's release workflow triggers its updater in this repository. Formula updates run automatically without human approval.
+Each tool's release workflow triggers its updater in this repository. Formula updates run automatically after provenance verification and native install tests. A daily drift check opens an issue if an update is missed.
 
 For updater commands, tests, and instructions for adding tools, see the [maintainer guide](maintainers/README.md).
 

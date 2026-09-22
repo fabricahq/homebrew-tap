@@ -14,8 +14,8 @@ import (
 
 // verifyChecksums binds every archive hash to the protected release workflow on main.
 // GitHub CLI verifies the Sigstore signature and workflow identity; no release code runs.
-func verifyChecksums(ctx context.Context, checksums []byte) error {
-	directory, err := os.MkdirTemp("", "code-rules-provenance-")
+func verifyChecksums(ctx context.Context, config toolConfig, checksums []byte) error {
+	directory, err := os.MkdirTemp("", "homebrew-provenance-")
 	if err != nil {
 		return err
 	}
@@ -27,14 +27,14 @@ func verifyChecksums(ctx context.Context, checksums []byte) error {
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	command := exec.CommandContext(ctx, "gh", "attestation", "verify", path,
-		"--repo", "fabricahq/code-rules",
-		"--signer-workflow", "fabricahq/code-rules/.github/workflows/release.yml",
+		"--repo", config.Repository,
+		"--signer-workflow", config.Repository+"/"+config.SignerWorkflow,
 		"--source-ref", "refs/heads/main",
 		"--deny-self-hosted-runners")
 	command.Stdout = io.Discard
 	command.Stderr = io.Discard
 	if err := command.Run(); err != nil {
-		return fmt.Errorf("checksum manifest must have a valid attestation from the Code Rules release workflow on main (GitHub CLI and GitHub authentication are required): %w", err)
+		return fmt.Errorf("checksum manifest must have a valid attestation from the configured release workflow on main (GitHub CLI and GitHub authentication are required): %w", err)
 	}
 	return nil
 }

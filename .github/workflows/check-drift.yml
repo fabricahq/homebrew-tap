@@ -1,0 +1,34 @@
+# Daily observation only; release dispatch remains the update trigger.
+name: Check formula drift
+on:
+  schedule:
+    - cron: '23 9 * * *'
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: check-formula-drift
+  cancel-in-progress: false
+jobs:
+  check:
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: go run ./cmd/update-formula --check-all
+  notify:
+    needs: check
+    if: ${{ failure() && github.ref == 'refs/heads/main' }}
+    permissions:
+      issues: write
+    uses: ./.github/workflows/report-failure.yml
+    with:
+      title: Homebrew formulas need attention

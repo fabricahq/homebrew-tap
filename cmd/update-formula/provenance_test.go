@@ -28,7 +28,7 @@ exit "${PROVENANCE_TEST_EXIT:-0}"
 		t.Fatal(err)
 	}
 	manifest := []byte("exact manifest bytes\n")
-	if err := verifyChecksums(t.Context(), manifest); err != nil {
+	if err := verifyChecksums(t.Context(), testConfig, manifest); err != nil {
 		t.Fatal(err)
 	}
 	arguments, err := os.ReadFile(log)
@@ -51,12 +51,12 @@ exit "${PROVENANCE_TEST_EXIT:-0}"
 		t.Fatal("temporary manifest was not removed", err)
 	}
 	t.Setenv("PROVENANCE_TEST_EXIT", "1")
-	if err := verifyChecksums(t.Context(), manifest); err == nil {
+	if err := verifyChecksums(t.Context(), testConfig, manifest); err == nil {
 		t.Fatal("accepted failed signature verification")
 	}
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if err := verifyChecksums(ctx, manifest); err == nil {
+	if err := verifyChecksums(ctx, testConfig, manifest); err == nil {
 		t.Fatal("ignored cancellation")
 	}
 }
@@ -68,7 +68,7 @@ func TestUnverifiedReleasePreservesFormula(t *testing.T) {
 		t.Fatal(err)
 	}
 	fetch := func(_ context.Context, url string) ([]byte, error) {
-		if url == latestRelease {
+		if url == testConfig.latestURL() {
 			return data, nil
 		}
 		return []byte(sums), nil
@@ -91,7 +91,7 @@ func TestUnverifiedReleasePreservesFormula(t *testing.T) {
 			return refused
 		}
 		var out bytes.Buffer
-		if err := run(t.Context(), fetch, verify, path, &out); !errors.Is(err, refused) {
+		if err := run(t.Context(), testConfig, fetch, verify, path, &out); !errors.Is(err, refused) {
 			t.Fatal("ignored verification failure", err)
 		}
 		if !verified {

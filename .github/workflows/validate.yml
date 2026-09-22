@@ -25,5 +25,23 @@ jobs:
           fi
       - run: go vet ./...
       - run: go test -race ./...
-      - run: ruby -c cmd/update-code-rules/testdata/code-rules.rb
+      - run: ruby -c cmd/update-formula/testdata/code-rules.rb
       - run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -shellcheck= -pyflakes=
+  formula-style:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      # This pinned action checks out the tap at GITHUB_SHA into GITHUB_WORKSPACE.
+      - uses: Homebrew/actions/setup-homebrew@848c272c7bfe984a197bd4d16383f4c106ec61e6
+        with:
+          token: ""
+          brew-gh-api-token: ""
+          stable: true
+      - name: Check generated formula style without executing release code
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_ANALYTICS: "1"
+        run: |
+          mkdir -p "$RUNNER_TEMP/style/Formula"
+          cp cmd/update-formula/testdata/code-rules.rb "$RUNNER_TEMP/style/Formula/code-rules.rb"
+          bash maintainers/check-formula-style.sh "$RUNNER_TEMP/style/Formula/code-rules.rb"

@@ -1,0 +1,171 @@
+# Shared public-tool pipeline: verify, install-test, then publish with separate credentials.
+name: Update tool
+on:
+  workflow_dispatch:
+    inputs:
+      tool:
+        description: Tool name from tools/<name>.json
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      tool:
+        required: true
+        type: string
+permissions: {}
+concurrency:
+  group: update-${{ inputs.tool }}
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.formula.outputs.changed }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Validate configuration and plan native install tests
+        id: plan
+        env:
+          TOOL: ${{ inputs.tool }}
+        run: |
+          set -euo pipefail
+          go test -race ./...
+          matrix=$(go run ./cmd/update-formula --tool "$TOOL" --matrix)
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+      - name: Generate the formula from the latest attested release
+        env:
+          TOOL: ${{ inputs.tool }}
+          GH_TOKEN: ${{ github.token }}
+        run: go run ./cmd/update-formula --tool "$TOOL"
+      - name: Prepare changed formula for publication
+        id: formula
+        env:
+          TOOL: ${{ inputs.tool }}
+        run: |
+          set -euo pipefail
+          path="Formula/$TOOL.rb"
+          if [ -f "$path" ] && [ -n "$(git status --porcelain -- "$path")" ]; then
+            ruby -c "$path"
+            mkdir prepared
+            cp "$path" "prepared/$TOOL.rb"
+            if git cat-file -e "HEAD:$path" 2>/dev/null; then
+              git rev-parse "HEAD:$path" > prepared/expected-sha
+            else
+              : > prepared/expected-sha
+            fi
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: steps.formula.outputs.changed == 'true'
+        with:
+          name: ${{ inputs.tool }}-formula
+          path: prepared/
+          if-no-files-found: error
+  install:
+    needs: prepare
+    if: needs.prepare.outputs.changed == 'true'
+    permissions: {}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      # This pinned action checks out the tap at GITHUB_SHA into GITHUB_WORKSPACE.
+      - uses: Homebrew/actions/setup-homebrew@848c272c7bfe984a197bd4d16383f4c106ec61e6
+        with:
+          token: ""
+          brew-gh-api-token: ""
+          stable: true
+      # Setup Homebrew may replace the workspace; download the immutable artifact afterward.
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.tool }}-formula
+          path: prepared
+      # Public archives only. No App key, write token, or protected environment enters this job.
+      - name: Style, audit, install, and test on the native platform
+        env:
+          TOOL: ${{ inputs.tool }}
+          PLATFORM: ${{ matrix.platform }}
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_ANALYTICS: "1"
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset GH_TOKEN GITHUB_TOKEN HOMEBREW_GITHUB_API_TOKEN
+          [[ "$TOOL" =~ ^[a-z][a-z0-9]*(-[a-z0-9]+)*$ ]]
+          case "$(uname -s)/$(uname -m)" in
+            Darwin/arm64) actual=darwin_arm64 ;;
+            Darwin/x86_64) actual=darwin_amd64 ;;
+            Linux/aarch64) actual=linux_arm64 ;;
+            Linux/x86_64) actual=linux_amd64 ;;
+            *) echo 'Unsupported runner architecture' >&2; exit 1 ;;
+          esac
+          [ "$actual" = "$PLATFORM" ]
+          brew tap-new --no-git fabrica/validation
+          cp "prepared/$TOOL.rb" "$(brew --repository fabrica/validation)/Formula/$TOOL.rb"
+          formula="fabrica/validation/$TOOL"
+          bash maintainers/check-formula-style.sh "$(brew --repository fabrica/validation)/Formula/$TOOL.rb"
+          brew audit --strict --online --skip-style "$formula"
+          brew install "$formula"
+          brew test "$formula"
+  publish:
+    needs: [prepare, install]
+    if: needs.prepare.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    environment: formula-publish
+    permissions: {}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.tool }}-formula
+          path: formula
+      - name: Create a token for formula publication
+        id: publisher
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.FORMULA_APP_CLIENT_ID }}
+          private-key: ${{ secrets.FORMULA_APP_PRIVATE_KEY }}
+          owner: fabricahq
+          repositories: homebrew-tap
+          permission-contents: write
+      # This job does not check out the repository or run the updater or downloaded tool.
+      - name: Publish the tested formula through the Contents API
+        env:
+          TOOL: ${{ inputs.tool }}
+          GH_TOKEN: ${{ steps.publisher.outputs.token }}
+        run: |
+          set -euo pipefail
+          [[ "$TOOL" =~ ^[a-z][a-z0-9]*(-[a-z0-9]+)*$ ]]
+          endpoint="repos/fabricahq/homebrew-tap/contents/Formula/$TOOL.rb"
+          if gh api "$endpoint?ref=main" > current.json 2> read-error.txt; then
+            sha=$(jq -r .sha current.json)
+          elif grep -q 'HTTP 404' read-error.txt; then
+            sha=''
+          else
+            cat read-error.txt >&2
+            exit 1
+          fi
+          expected=$(cat formula/expected-sha)
+          [ "$sha" = "$expected" ] || { echo 'Formula changed during validation; rerun the workflow.' >&2; exit 1; }
+          jq -n --rawfile formula "formula/$TOOL.rb" --arg sha "$sha" --arg tool "$TOOL" \
+            '{message: ("Update " + $tool + " formula"), branch: "main", content: ($formula | @base64)} + (if $sha == "" then {} else {sha: $sha} end)' > request.json
+          gh api --method PUT "$endpoint" --input request.json
+  notify:
+    needs: [prepare, install, publish]
+    if: ${{ failure() && github.ref == 'refs/heads/main' }}
+    permissions:
+      issues: write
+    uses: ./.github/workflows/report-failure.yml
+    with:
+      title: Homebrew update failed - ${{ inputs.tool }}

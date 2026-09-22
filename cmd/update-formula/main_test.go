@@ -85,7 +85,7 @@ func TestRun(t *testing.T) {
 			calls := 0
 			fetch := func(_ context.Context, url string) ([]byte, error) {
 				calls++
-				if url == latestRelease {
+				if url == testConfig.latestURL() {
 					switch scenario {
 					case "no release":
 						return nil, errNotFound
@@ -98,7 +98,7 @@ func TestRun(t *testing.T) {
 					}
 					return data, nil
 				}
-				if url != repository+"/releases/download/v1.2.3/SHA256SUMS" {
+				if url != testConfig.repositoryURL()+"/releases/download/v1.2.3/SHA256SUMS" {
 					t.Fatalf("unexpected URL: %s", url)
 				}
 				if scenario == "missing checksums" {
@@ -107,14 +107,14 @@ func TestRun(t *testing.T) {
 				return []byte(sums), nil
 			}
 			var out bytes.Buffer
-			err = run(t.Context(), fetch, func(context.Context, []byte) error { return nil }, path, &out)
+			err = run(t.Context(), testConfig, fetch, func(context.Context, []byte) error { return nil }, path, &out)
 			switch scenario {
 			case "publish":
-				if err != nil || !strings.Contains(out.String(), "Prepared Code Rules v1.2.3") {
+				if err != nil || !strings.Contains(out.String(), "Prepared code-rules v1.2.3") {
 					t.Fatal(err, out.String())
 				}
 				out.Reset()
-				if err := run(t.Context(), fetch, func(context.Context, []byte) error { return nil }, path, &out); err != nil || !strings.Contains(out.String(), "Already current:") {
+				if err := run(t.Context(), testConfig, fetch, func(context.Context, []byte) error { return nil }, path, &out); err != nil || !strings.Contains(out.String(), "Already current:") {
 					t.Fatal(err, out.String())
 				}
 			case "no release":
