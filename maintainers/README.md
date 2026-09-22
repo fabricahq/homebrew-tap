@@ -27,15 +27,21 @@ Keep updater implementations and tests in this tap. Product repositories should 
 
 Trusted Fabrica product repositories share the [**Fabrica Homebrew Releaser**](https://github.com/apps/fabrica-homebrew-releaser) GitHub App. Install this App only on the tap, with **Actions: read and write** and **Metadata: read-only** permissions. It has no permission to edit repository contents.
 
-Set up each product repository as follows:
+Store the shared credentials once in the [Fabrica organization's Actions settings](https://github.com/organizations/fabricahq/settings/secrets/actions). Product maintainers request access for their repository; they do not need a copy of the PEM file.
 
-1. Open the [Releaser App settings](https://github.com/organizations/fabricahq/settings/apps/fabrica-homebrew-releaser). Under **About**, copy **Client ID**. GitHub assigns this value; you do not generate it. Use the client ID, not the numeric App ID or a client secret.
-2. Obtain the Releaser App's existing `.pem` private key from an authorized maintainer. Reuse the shared key when adding a product. If no usable key exists, follow [Get or rotate an App private key](#get-or-rotate-an-app-private-key).
-3. In the product repository, open **Settings > Environments** and create or select the environment used by the dispatch job. Code Rules uses `homebrew-dispatch`. Under **Deployment branches and tags**, select **Selected branches and tags** and allow only the branch `main`.
-4. In that environment, add an **environment secret** named `HOMEBREW_APP_PRIVATE_KEY` containing the entire PEM file, including its header, footer, and line breaks. Add an **environment variable** named `HOMEBREW_APP_CLIENT_ID` containing the copied client ID.
-5. Set the dispatch job's `environment` to that environment's name. The job creates a short-lived App token restricted to this tap, then dispatches the product's updater workflow on `main`.
+For initial setup or rotation, an organization owner:
 
-The shared credential can trigger or disrupt any workflow in the tap. Share it only among trusted Fabrica repositories. Use a separate trigger App if a product needs a separate trust boundary.
+1. Opens the [Releaser App settings](https://github.com/organizations/fabricahq/settings/apps/fabrica-homebrew-releaser) and copies **Client ID** from **About**. GitHub assigns this value; use the client ID, not the numeric App ID or a client secret.
+2. Obtains the App's existing PEM key, or follows [Get or rotate an App private key](#get-or-rotate-an-app-private-key) if no usable key exists.
+3. In the organization's **Secrets and variables > Actions > Secrets**, sets `HOMEBREW_APP_PRIVATE_KEY` to the entire PEM file, including its header, footer, and line breaks.
+4. In the **Variables** tab, sets `HOMEBREW_APP_CLIENT_ID` to the copied client ID.
+5. Sets **Repository access** to **Selected repositories** for both values. Initially, only `fabricahq/code-rules` is allowed. Add another repository only after confirming that its maintainers and workflows are trusted.
+
+To onboard a product, grant its repository access to both organization values and add its dispatch job. Use `secrets.HOMEBREW_APP_PRIVATE_KEY` and `vars.HOMEBREW_APP_CLIENT_ID`. The job creates a short-lived token restricted to this tap, then dispatches the product's updater workflow on `main`. Avoid repository or environment copies that would override the organization values.
+
+**Access tradeoff:** organization secrets are restricted by repository, not by branch or environment. Eligible workflows in an allowed repository can read the shared key without entering a protected environment. The Code Rules dispatch job uses the `main`-only `homebrew-dispatch` environment, but that restriction does not protect the organization secret from other jobs. The key can trigger or disrupt any workflow in the tap, so do not grant access to all organization repositories.
+
+[CR-7: OIDC dispatch service](https://linear.app/ohmygoshjosh/issue/CR-7/replace-shared-homebrew-trigger-keys-with-an-oidc-dispatch-service) tracks replacing this shared-key access with a service that verifies each caller's repository, branch, and workflow. This is a follow-up for Fabrica tools, not a prerequisite for the first Code Rules release.
 
 For an example of the dispatch job, see the [Code Rules release workflow](https://github.com/fabricahq/code-rules/blob/main/.github/workflows/release.yml).
 
@@ -62,8 +68,8 @@ App settings require an organization owner or an App manager with permission to 
 
 1. Open the settings page for the correct App using the links above.
 2. Under **Private keys**, click **Generate a private key**. GitHub downloads a `.pem` file. Store it securely: GitHub does not keep a downloadable copy of the private key.
-3. Upload the PEM contents to the appropriate environment secret. Do not commit the file, paste it into a PR, or print it in logs. Existing Actions secrets cannot be read back to recover a lost key.
-4. When rotating a key, update every environment using that key and verify authentication before deleting the old key in the App's settings. If a key is compromised, revoke it promptly.
+3. Upload the Releaser PEM to the organization secret, or the Publisher PEM to the tap's `formula-publish` environment secret. Do not commit the file, paste it into a PR, or print it in logs. Existing Actions secrets cannot be read back to recover a lost key.
+4. When rotating a key, update its stored secret and verify authentication before deleting the old key in the App's settings. Check for any older repository or environment copies too. If a key is compromised, revoke it promptly.
 
 See GitHub's [private-key management instructions](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps) for generation, fingerprint verification, and revocation.
 
@@ -77,9 +83,9 @@ The Code Rules updater uses `gh attestation verify` for this check. Local runs n
 
 ### Activate the setup
 
-Configure both Apps, their environment credentials, and the branch rules before releasing a tool. Merge the product's attestation support and the tap updater before publishing the first release. Adding the environment to a workflow does not create its branch restrictions automatically.
+Configure both Apps, the Releaser organization credentials, the Publisher environment credentials, and the branch rules before releasing a tool. Merge the product's attestation support and the tap updater before publishing the first release. Adding the environment to a workflow does not create its branch restrictions automatically.
 
-When moving an existing trigger key into an environment, remove the repository-level copy after the release workflow uses that environment. This prevents other branches from using the key.
+When moving trigger credentials to organization scope, verify the selected repository access before removing older repository and environment copies. The workflows continue using the same secret and variable names.
 
 ## Prepare and validate changes
 
