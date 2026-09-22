@@ -1,4 +1,10 @@
-# Validate changes to the tap updater without publishing formula updates.
+# Catch updater and workflow regressions during PR review, before they can affect
+# installations. Go tests exercise release validation, formula generation, and drift
+# detection; syntax, formatting, and workflow checks catch invalid implementation changes.
+# Check the generated fixture against Homebrew style even before a first release exists.
+# These checks do not prove that a published archive installs: update-tool.yml tests
+# the actual release on each configured native platform before publishing its formula.
+# Pushes and PRs can run unapproved code here, so no publishing credentials are provided.
 name: Validate tap
 on:
   push:
@@ -27,6 +33,7 @@ jobs:
       - run: go test -race ./...
       - run: ruby -c cmd/update-formula/testdata/code-rules.rb
       - run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -shellcheck= -pyflakes=
+  # The checked-in fixture catches incompatible template changes without a live release.
   formula-style:
     runs-on: ubuntu-latest
     permissions: {}

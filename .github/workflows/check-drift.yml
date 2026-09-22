@@ -1,4 +1,12 @@
-# Daily observation only; release dispatch remains the update trigger.
+# Detect releases that never reached Homebrew. A product can publish successfully but
+# fail or skip its cross-repository dispatch, or the tap's update can fail afterward.
+# In either case, GitHub offers the new version while brew still installs an older
+# version (or has no formula at all). A missed dispatch may leave no tap run to alert on.
+# Compare every tools/*.json entry's latest public stable release with its formula
+# once a day and open an issue on a mismatch or a failed check. No first release and
+# no formula is expected, so that case passes. This observes versions, not binary health.
+# Dispatch remains the immediate update trigger; this workflow never publishes or
+# retries an update. GitHub can delay schedules or disable them after repository inactivity.
 name: Check formula drift
 on:
   schedule:
@@ -24,6 +32,7 @@ jobs:
           go-version-file: go.mod
           cache: false
       - run: go run ./cmd/update-formula --check-all
+  # Report both version mismatches and errors that prevent determining freshness.
   notify:
     needs: check
     if: ${{ failure() && github.ref == 'refs/heads/main' }}

@@ -1,4 +1,7 @@
-# Compatibility endpoint used by the existing Code Rules release trigger.
+# Preserve the workflow name called by Code Rules' existing release job. Removing or
+# renaming this endpoint would let a CLI release succeed while its Homebrew dispatch fails.
+# Delegate to the shared pipeline so Code Rules gets the same verification, native
+# install tests, and protected publication as other tools, without a copied updater.
 name: Update Code Rules
 on:
   workflow_dispatch:

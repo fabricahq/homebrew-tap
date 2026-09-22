@@ -1,4 +1,10 @@
-# Shared public-tool pipeline: verify, install-test, then publish with separate credentials.
+# Convert a successful public product release into an installable Homebrew formula.
+# Product workflows dispatch a configured tool name; compatibility wrappers can call
+# this same pipeline. Resolve the latest stable release rather than trusting a version
+# supplied by the caller. Repeated dispatches for an unchanged formula are no-ops.
+# A checksum alone cannot establish who built a release, so prepare verifies its
+# signed manifest. A valid signature cannot prove an archive works, so install tests
+# run next. Only the separate publish job receives the App credential for formula commits.
 name: Update tool
 on:
   workflow_dispatch:
@@ -13,10 +19,14 @@ on:
         required: true
         type: string
 permissions: {}
+# Serialize updates for one tool; different tools can progress independently. Let an
+# active publication finish. Each subsequent run resolves the latest release again.
 concurrency:
   group: update-${{ inputs.tool }}
   cancel-in-progress: false
 jobs:
+  # Reject untrusted signers, invalid assets, changed same-version output, and downgrades
+  # before creating the immutable formula artifact. This job cannot publish to the tap.
   prepare:
     if: github.ref == 'refs/heads/main'
     permissions:
@@ -72,6 +82,9 @@ jobs:
           name: ${{ inputs.tool }}-formula
           path: prepared/
           if-no-files-found: error
+  # Catch missing executables, wrong architecture mappings, broken downloads, and failed
+  # version or smoke-test commands before users encounter them through brew install. Each runner
+  # tests its native platform. Downloaded code runs without App keys or write permissions.
   install:
     needs: prepare
     if: needs.prepare.outputs.changed == 'true'
@@ -119,6 +132,9 @@ jobs:
           brew audit --strict --online --skip-style "$formula"
           brew install "$formula"
           brew test "$formula"
+  # Wait for every native install job, then publish the original prepared artifact.
+  # Test jobs cannot replace that artifact with output from the downloaded executable.
+  # The main-only environment isolates the Publisher key from unapproved branch runs.
   publish:
     needs: [prepare, install]
     if: needs.prepare.outputs.changed == 'true'
@@ -156,11 +172,15 @@ jobs:
             cat read-error.txt >&2
             exit 1
           fi
+          # A human PR may change this formula during testing. Refuse to overwrite it;
+          # the Contents API also checks the supplied SHA when applying the update.
           expected=$(cat formula/expected-sha)
           [ "$sha" = "$expected" ] || { echo 'Formula changed during validation; rerun the workflow.' >&2; exit 1; }
           jq -n --rawfile formula "formula/$TOOL.rb" --arg sha "$sha" --arg tool "$TOOL" \
             '{message: ("Update " + $tool + " formula"), branch: "main", content: ($formula | @base64)} + (if $sha == "" then {} else {sha: $sha} end)' > request.json
           gh api --method PUT "$endpoint" --input request.json
+  # A product release stays published even if this pipeline fails. Surface that failure
+  # as an issue so maintainers can repair and rerun the tap update.
   notify:
     needs: [prepare, install, publish]
     if: ${{ failure() && github.ref == 'refs/heads/main' }}

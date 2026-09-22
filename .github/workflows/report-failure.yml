@@ -1,4 +1,9 @@
-# Separate notification job never executes an updater, formula, or release binary.
+# Turn update and drift-check failures into a persistent issue that maintainers can
+# act on without watching every Actions run. Called by those workflows on failure.
+# Reuse an open issue with the same title to avoid daily duplicates; a maintainer
+# closes it after fixing the cause and verifying a successful rerun.
+# Keep Issues write permission in this isolated job. It only reads issue metadata
+# and links to the failed run; it never checks out or executes updater or release code.
 name: Report Homebrew failure
 on:
   workflow_call:
@@ -7,6 +12,7 @@ on:
         required: true
         type: string
 permissions: {}
+# Serialize reports with the same title so concurrent failures do not create duplicates.
 concurrency:
   group: report-${{ inputs.title }}
   cancel-in-progress: false
