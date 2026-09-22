@@ -1,6 +1,6 @@
 # Generated from a published Code Rules release; update with go run ./cmd/update-code-rules.
 class CodeRules < Formula
-  desc "Version and share engineering rules for coding agents"
+  desc "The package manager for engineering best practices"
   homepage "https://code-rules.fabricahq.com"
   version "1.2.3"
   license "MIT"

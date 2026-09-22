@@ -98,7 +98,7 @@ func renderFormula(r release, checksums string) (string, error) {
 	}
 	version := r.Tag[1:]
 	var out strings.Builder
-	fmt.Fprintf(&out, "%s\nclass CodeRules < Formula\n  desc \"Version and share engineering rules for coding agents\"\n  homepage \"https://code-rules.fabricahq.com\"\n  version %q\n  license \"MIT\"\n\n", formulaHeader, version)
+	fmt.Fprintf(&out, "%s\nclass CodeRules < Formula\n  desc \"The package manager for engineering best practices\"\n  homepage \"https://code-rules.fabricahq.com\"\n  version %q\n  license \"MIT\"\n\n", formulaHeader, version)
 	for index, target := range targets {
 		if index%2 == 0 {
 			osName := "macos"

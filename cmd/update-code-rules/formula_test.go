@@ -23,7 +23,7 @@ func releaseFixture(version string) (release, string) {
 	return r, sums.String()
 }
 
-// TestFormulaOutput pins output to the former updater's formula with only its generator command changed.
+// TestFormulaOutput pins the generated formula to the reference fixture.
 func TestFormulaOutput(t *testing.T) {
 	r, sums := releaseFixture("1.2.3")
 	formula, err := renderFormula(r, sums)
