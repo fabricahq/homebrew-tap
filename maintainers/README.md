@@ -1,35 +1,59 @@
 # Maintain the Fabrica Homebrew tap
 
-After publishing a stable release, the Code Rules release workflow triggers **Update Code Rules** through the Fabrica Homebrew Releaser GitHub App. The tap validates the release and commits its formula directly to `main`; routine formula updates do not require a pull request or human approval. The updater can also run manually to retry an update. It does not poll for releases. Until the first stable release is published and the workflow succeeds, the formula is unavailable. Prereleases and drafts are never selected; failed updates leave the existing formula intact.
+This repository contains the formulas, updaters, and tests for distributing Fabrica tools through Homebrew. Each tool's source repository owns its binaries, checksums, and releases.
 
-Maintainers need the Go version declared in `go.mod` to prepare an update locally:
+## How updates work
+
+1. A tool's release workflow publishes a stable release with binaries and checksums.
+2. The release workflow triggers that tool's updater workflow in this tap.
+3. The updater validates the release and generates the formula.
+4. The publishing job commits the changed formula to `main` automatically, without human approval.
+
+Each updater changes only its tool's formula under `Formula/`. Updaters skip drafts and prereleases, reject downgrades and changed checksums at the same version, and preserve the existing formula when validation fails.
+
+Updates run in response to releases, without polling. To retry a failed update, run the tool's updater workflow manually.
+
+## Add a tool
+
+1. In the tool's repository, publish release archives and checksums for the supported operating systems and processors.
+2. In this tap, add a Go updater and tests under `cmd/update-<tool>/`. The updater should generate `Formula/<tool>.rb` from verified release metadata.
+3. Add a workflow under `.github/workflows/` with a `workflow_dispatch` trigger. Validate and prepare the formula before passing it to the publishing job.
+4. Configure the tool's release workflow to trigger its tap workflow after a successful stable release.
+5. Test installation in a disposable environment and add the tool to the [README's tool list](../README.md#tools).
+
+Keep updater implementations and tests in this tap. Product repositories should publish releases and trigger updates, without keeping copies of the tap's code.
+
+## Configure release triggers
+
+Use a dedicated GitHub App for each product's release trigger. Install it only on the tap it needs to trigger, with **Actions: read and write** and **Metadata: read-only** permissions.
+
+Store the App's private key in the product's protected release environment. Generate a short-lived installation token restricted to the tap, then dispatch the product's updater workflow on `main`. Trigger credentials do not need Contents write permission.
+
+Keep credentials for publishing formulas in the tap. Do not share a trigger App's private key across product repositories: possession of that key grants access to every installation of that App.
+
+For an example of the dispatch job, see the [Code Rules release workflow](https://github.com/fabricahq/code-rules/blob/main/.github/workflows/release.yml).
+
+## Prepare and validate changes
+
+Use the Go version declared in `go.mod`. Run the updater for the tool you are changing. For example, to prepare the Code Rules formula:
 
 ```sh
 go run ./cmd/update-code-rules
 ```
 
-Review `Formula/code-rules.rb`, then commit it. The updater refuses downgrades and changed checksums at the same version. Formula downloads come directly from `fabricahq/code-rules` release assets.
-
-This repository owns Homebrew formula generation, validation, and publication for Fabrica tools. Each product repository owns its release binaries and checksums and triggers the corresponding tap workflow after publishing a stable release. Keep updater implementations and tests here, rather than copying them into product repositories.
-
-This repository can hold other Fabrica tools under `Formula/`. The Code Rules updater changes only `Formula/code-rules.rb`.
-
-## Validate updater changes
+Inspect the generated formula, then run the shared checks:
 
 ```sh
 go test -race ./...
 go vet ./...
-ruby -c cmd/update-code-rules/testdata/code-rules.rb
 ```
 
-Tests cover formula output, metadata validation, downgrade and same-version protection, HTTPS redirects, download limits, and failures that must leave the formula unchanged. The updater fetches only metadata and checksums; it never executes downloaded release code. Actual installation tests belong in a disposable environment.
+Also check the generated formula's Ruby syntax. For example:
 
-Updater code and workflow changes go through pull requests. After those changes are approved, stable product releases trigger automatic formula publication.
+```sh
+ruby -c Formula/code-rules.rb
+```
 
-## Reuse the release app for another tool
+Test release validation, formula output, upgrades, and failures that must leave the existing formula unchanged. Updaters must not execute downloaded release code; run installation tests in a disposable environment.
 
-Fabrica Homebrew Releaser is a private GitHub App owned by `fabricahq`. Install it only on the tap repositories it needs to trigger, with **Actions: read and write** and the required **Metadata: read-only** permission. It needs no repository contents permission: each tap's workflow uses its own `GITHUB_TOKEN` to publish formula updates.
-
-For another Fabrica tool, add a dedicated updater workflow to its tap with `workflow_dispatch`, then trigger it after that tool publishes a stable release. Configure the product repository with `HOMEBREW_APP_CLIENT_ID` as an Actions variable and `HOMEBREW_APP_PRIVATE_KEY` as an Actions secret. Generate a short-lived installation token restricted to the intended tap and `permission-actions: write`, then dispatch that updater on `main`. For tools sharing this tap, the existing app installation can be reused.
-
-Access to the app's private key allows creating tokens for any repository in its installation. Share that credential only with trusted release repositories and jobs; use separate apps when products need separate trust boundaries. Never commit the key. The Code Rules release workflow provides an example of a separate dispatch job with no source checkout or build tools.
+Submit updater and workflow changes through pull requests. Once those changes are approved, routine formula updates run automatically.
