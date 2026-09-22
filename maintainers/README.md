@@ -25,7 +25,7 @@ Keep updater implementations and tests in this tap. Product repositories should 
 
 ## Configure release triggers
 
-Trusted Fabrica product repositories share the **Fabrica Homebrew Releaser** GitHub App. Install this App only on the tap, with **Actions: read and write** and **Metadata: read-only** permissions. It has no permission to edit repository contents.
+Trusted Fabrica product repositories share the [**Fabrica Homebrew Releaser**](https://github.com/apps/fabrica-homebrew-releaser) GitHub App. Install this App only on the tap, with **Actions: read and write** and **Metadata: read-only** permissions. It has no permission to edit repository contents.
 
 In each product repository, store `HOMEBREW_APP_PRIVATE_KEY` in a release environment restricted to `main`. Set `HOMEBREW_APP_CLIENT_ID` to the shared App's client ID. The release job generates a short-lived token restricted to this tap, then dispatches the product's updater workflow on `main`.
 
