@@ -1,0 +1,40 @@
+# Turn update and drift-check failures into a persistent issue that maintainers can
+# act on without watching every Actions run. Called by those workflows on failure.
+# Reuse an open issue with the same title to avoid daily duplicates; a maintainer
+# closes it after fixing the cause and verifying a successful rerun.
+# Keep Issues write permission in this isolated job. It only reads issue metadata
+# and links to the failed run; it never checks out or executes updater or release code.
+name: Report Homebrew failure
+on:
+  workflow_call:
+    inputs:
+      title:
+        required: true
+        type: string
+permissions: {}
+# Serialize reports with the same title so concurrent failures do not create duplicates.
+concurrency:
+  group: report-${{ inputs.title }}
+  cancel-in-progress: false
+jobs:
+  report:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open one issue until a maintainer resolves it
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: ${{ inputs.title }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          gh api --paginate 'repos/fabricahq/homebrew-tap/issues?state=open&per_page=100' > issues.json
+          if jq -se --arg title "$TITLE" 'add | any(.title == $title and .pull_request == null)' issues.json > /dev/null; then
+            echo 'An open issue already tracks this failure.'
+            exit 0
+          fi
+          printf 'Homebrew automation needs attention. Inspect the failed run: %s\n\nAfter fixing the cause, rerun the affected updater or drift check. Close this issue once the check passes. Repeated failures are deduplicated while it remains open.\n' "$RUN_URL" > body.md
+          jq -n --arg title "$TITLE" --rawfile body body.md '{title:$title,body:$body}' > issue.json
+          gh api --method POST repos/fabricahq/homebrew-tap/issues --input issue.json --jq .html_url

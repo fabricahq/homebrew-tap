@@ -1,0 +1,13 @@
+{
+  "name": "code-rules",
+  "repository": "fabricahq/code-rules",
+  "binary": "code-rules",
+  "description": "The package manager for engineering best practices",
+  "homepage": "https://code-rules.fabricahq.com",
+  "license": "MIT",
+  "license_file": "LICENSE.md",
+  "platforms": ["darwin_arm64", "darwin_amd64", "linux_arm64", "linux_amd64"],
+  "signer_workflow": ".github/workflows/release.yml",
+  "version_args": ["--version"],
+  "test_args": ["--help"]
+}

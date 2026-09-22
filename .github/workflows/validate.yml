@@ -1,0 +1,54 @@
+# Catch updater and workflow regressions during PR review, before they can affect
+# installations. Go tests exercise release validation, formula generation, and drift
+# detection; syntax, formatting, and workflow checks catch invalid implementation changes.
+# Check the generated fixture against Homebrew style even before a first release exists.
+# These checks do not prove that a published archive installs: update-tool.yml tests
+# the actual release on each configured native platform before publishing its formula.
+# Pushes and PRs can run unapproved code here, so no publishing credentials are provided.
+name: Validate tap
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Check Go formatting
+        run: |
+          unformatted=$(gofmt -l cmd)
+          if [ -n "$unformatted" ]; then
+            printf '%s\n' "$unformatted"
+            exit 1
+          fi
+      - run: go vet ./...
+      - run: go test -race ./...
+      - run: ruby -c cmd/update-formula/testdata/code-rules.rb
+      - run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -shellcheck= -pyflakes=
+  # The checked-in fixture catches incompatible template changes without a live release.
+  formula-style:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      # This pinned action checks out the tap at GITHUB_SHA into GITHUB_WORKSPACE.
+      - uses: Homebrew/actions/setup-homebrew@848c272c7bfe984a197bd4d16383f4c106ec61e6
+        with:
+          token: ""
+          brew-gh-api-token: ""
+          stable: true
+      - name: Check generated formula style without executing release code
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_ANALYTICS: "1"
+        run: |
+          mkdir -p "$RUNNER_TEMP/style/Formula"
+          cp cmd/update-formula/testdata/code-rules.rb "$RUNNER_TEMP/style/Formula/code-rules.rb"
+          bash maintainers/check-formula-style.sh "$RUNNER_TEMP/style/Formula/code-rules.rb"
