@@ -10,17 +10,31 @@ brew uninstall code-rules
 
 The formula installs the official executable for your operating system and processor, verifies the release archive's SHA-256, and retains its MIT license. Go, Node.js, and Bun are not required. Git is needed for `code-rules sync`.
 
-After publishing a stable release, the Code Rules release workflow triggers **Update Code Rules** through the Fabrica Homebrew Releaser GitHub App. The updater can also run manually to retry an update. It does not poll for releases. Until the first stable release is published and the workflow succeeds, the formula is unavailable. Prereleases and drafts are never selected; failed updates leave the existing formula intact.
+After publishing a stable release, the Code Rules release workflow triggers **Update Code Rules** through the Fabrica Homebrew Releaser GitHub App. The tap validates the release and commits its formula directly to `main`; routine formula updates do not require a pull request or human approval. The updater can also run manually to retry an update. It does not poll for releases. Until the first stable release is published and the workflow succeeds, the formula is unavailable. Prereleases and drafts are never selected; failed updates leave the existing formula intact.
 
-To prepare an update locally:
+Maintainers need the Go version declared in `go.mod` to prepare an update locally:
 
 ```sh
-python3 scripts/update_code_rules.py
+go run ./cmd/update-code-rules
 ```
 
 Review `Formula/code-rules.rb`, then commit it. The updater refuses downgrades and changed checksums at the same version. Formula downloads come directly from `fabricahq/code-rules` release assets.
 
+This repository owns Homebrew formula generation, validation, and publication for Fabrica tools. Each product repository owns its release binaries and checksums and triggers the corresponding tap workflow after publishing a stable release. Keep updater implementations and tests here, rather than copying them into product repositories.
+
 This repository can hold other Fabrica tools under `Formula/`. The Code Rules updater changes only `Formula/code-rules.rb`.
+
+## Validate updater changes
+
+```sh
+go test -race ./...
+go vet ./...
+ruby -c cmd/update-code-rules/testdata/code-rules.rb
+```
+
+Tests cover formula output, metadata validation, downgrade and same-version protection, HTTPS redirects, download limits, and failures that must leave the formula unchanged. The updater fetches only metadata and checksums; it never executes downloaded release code. Actual installation tests belong in a disposable environment.
+
+Updater code and workflow changes go through pull requests. After those changes are approved, stable product releases trigger automatic formula publication.
 
 ## Reuse the release app for another tool
 

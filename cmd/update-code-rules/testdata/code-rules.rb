@@ -1,0 +1,39 @@
+# Generated from a published Code Rules release; update with go run ./cmd/update-code-rules.
+class CodeRules < Formula
+  desc "Version and share engineering rules for coding agents"
+  homepage "https://code-rules.fabricahq.com"
+  version "1.2.3"
+  license "MIT"
+
+  on_macos do
+    on_arm do
+      url "https://github.com/fabricahq/code-rules/releases/download/v1.2.3/code-rules_1.2.3_darwin_arm64.tar.gz"
+      sha256 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    end
+    on_intel do
+      url "https://github.com/fabricahq/code-rules/releases/download/v1.2.3/code-rules_1.2.3_darwin_amd64.tar.gz"
+      sha256 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    end
+  end
+
+  on_linux do
+    on_arm do
+      url "https://github.com/fabricahq/code-rules/releases/download/v1.2.3/code-rules_1.2.3_linux_arm64.tar.gz"
+      sha256 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    end
+    on_intel do
+      url "https://github.com/fabricahq/code-rules/releases/download/v1.2.3/code-rules_1.2.3_linux_amd64.tar.gz"
+      sha256 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    end
+  end
+
+  def install
+    bin.install "code-rules"
+    prefix.install "LICENSE.md"
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/code-rules --version")
+    system bin/"code-rules", "--help"
+  end
+end

@@ -15,8 +15,14 @@ jobs:
         with:
           ref: main
           persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Validate the updater
+        run: go test -race ./...
       - name: Generate the formula from the latest published release
-        run: python3 scripts/update_code_rules.py
+        run: go run ./cmd/update-code-rules
       - name: Prepare changed formula for publication
         id: formula
         run: |
