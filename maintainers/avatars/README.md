@@ -5,4 +5,4 @@ These images use the Fabrica Assemble mark. The bottom-right badges distinguish 
 - `fabrica-homebrew-releaser.png`: amber broadcast badge for release triggers.
 - `fabrica-homebrew-publisher.png`: mint checkmark badge for verified formula publication.
 
-The PNGs are the original generated assets. GitHub requires uploads under 1 MB; export a JPEG copy at 90% quality for upload without changing the artwork or dimensions.
+Upload these PNGs directly; both are under GitHub's 1 MB limit. Keep PNG format to preserve sharp edges. Set each App's badge background color to `#000000`. The artwork uses tight margins so it remains prominent inside GitHub's padded badge.
