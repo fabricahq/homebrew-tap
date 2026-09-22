@@ -27,7 +27,13 @@ Keep updater implementations and tests in this tap. Product repositories should 
 
 Trusted Fabrica product repositories share the [**Fabrica Homebrew Releaser**](https://github.com/apps/fabrica-homebrew-releaser) GitHub App. Install this App only on the tap, with **Actions: read and write** and **Metadata: read-only** permissions. It has no permission to edit repository contents.
 
-In each product repository, store `HOMEBREW_APP_PRIVATE_KEY` in a release environment restricted to `main`. Set `HOMEBREW_APP_CLIENT_ID` to the shared App's client ID. The release job generates a short-lived token restricted to this tap, then dispatches the product's updater workflow on `main`.
+Set up each product repository as follows:
+
+1. Open the [Releaser App settings](https://github.com/organizations/fabricahq/settings/apps/fabrica-homebrew-releaser). Under **About**, copy **Client ID**. GitHub assigns this value; you do not generate it. Use the client ID, not the numeric App ID or a client secret.
+2. Obtain the Releaser App's existing `.pem` private key from an authorized maintainer. Reuse the shared key when adding a product. If no usable key exists, follow [Get or rotate an App private key](#get-or-rotate-an-app-private-key).
+3. In the product repository, open **Settings > Environments** and create or select the environment used by the dispatch job. Code Rules uses `homebrew-dispatch`. Under **Deployment branches and tags**, select **Selected branches and tags** and allow only the branch `main`.
+4. In that environment, add an **environment secret** named `HOMEBREW_APP_PRIVATE_KEY` containing the entire PEM file, including its header, footer, and line breaks. Add an **environment variable** named `HOMEBREW_APP_CLIENT_ID` containing the copied client ID.
+5. Set the dispatch job's `environment` to that environment's name. The job creates a short-lived App token restricted to this tap, then dispatches the product's updater workflow on `main`.
 
 The shared credential can trigger or disrupt any workflow in the tap. Share it only among trusted Fabrica repositories. Use a separate trigger App if a product needs a separate trust boundary.
 
@@ -35,13 +41,31 @@ For an example of the dispatch job, see the [Code Rules release workflow](https:
 
 ## Protect formula publication
 
-A separate **Fabrica Homebrew Publisher** App owns formula commits. Install it only on this tap with **Contents: read and write** and **Metadata: read-only** permissions. Do not give product repositories its private key.
+A separate [**Fabrica Homebrew Publisher**](https://github.com/apps/fabrica-homebrew-publisher) App owns formula commits. Install it only on this tap with **Contents: read and write** and **Metadata: read-only** permissions. Do not give product repositories its private key.
 
-Store `FORMULA_APP_PRIVATE_KEY` and `FORMULA_APP_CLIENT_ID` in the tap's `formula-publish` environment. Restrict that environment to the `main` branch, with no required reviewers or wait timer.
+Configure the publishing credentials once in the tap, rather than in each product repository:
+
+1. Open the [Publisher App settings](https://github.com/organizations/fabricahq/settings/apps/fabrica-homebrew-publisher) and copy **Client ID** from **About**.
+2. Obtain this App's `.pem` key from an authorized maintainer, or follow [Get or rotate an App private key](#get-or-rotate-an-app-private-key). The Publisher and Releaser are separate Apps with different keys and client IDs.
+3. Open the tap's **Settings > Environments > formula-publish**. Allow only the branch `main` under **Deployment branches and tags**, with no required reviewers or wait timer.
+4. Add an **environment secret** named `FORMULA_APP_PRIVATE_KEY` containing the entire Publisher PEM file. Add an **environment variable** named `FORMULA_APP_CLIENT_ID` containing the Publisher client ID.
+
+The publishing job already declares `environment: formula-publish` and uses these names. `FORMULA_APP_PRIVATE_KEY` is an App credential, not a separate key generated for each formula.
 
 Require pull requests for changes to `main`, with a bypass for the publishing App. Keep deletion and force-push protection in a separate rule without a bypass. Repository administrators may bypass review requirements through a pull request, but cannot push directly. The publishing credential has repository-wide Contents access; the trusted publishing job limits writes to the intended formula.
 
 The preparation job validates releases without publishing credentials. The publishing job consumes only the prepared formula and checks that the existing formula has not changed. It does not check out or execute repository code.
+
+### Get or rotate an App private key
+
+App settings require an organization owner or an App manager with permission to manage the App. If you lack access or the existing PEM file, ask an authorized maintainer.
+
+1. Open the settings page for the correct App using the links above.
+2. Under **Private keys**, click **Generate a private key**. GitHub downloads a `.pem` file. Store it securely: GitHub does not keep a downloadable copy of the private key.
+3. Upload the PEM contents to the appropriate environment secret. Do not commit the file, paste it into a PR, or print it in logs. Existing Actions secrets cannot be read back to recover a lost key.
+4. When rotating a key, update every environment using that key and verify authentication before deleting the old key in the App's settings. If a key is compromised, revoke it promptly.
+
+See GitHub's [private-key management instructions](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps) for generation, fingerprint verification, and revocation.
 
 ### Verify release provenance
 
