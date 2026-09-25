@@ -56,12 +56,12 @@ func checkDrift(ctx context.Context, config toolConfig, root string, fetch func(
 	if err := validateRelease(r); err != nil {
 		return err
 	}
-	match := formulaVersionPattern.FindSubmatch(current)
-	if match == nil {
+	version, ok := formulaVersion(current)
+	if !ok {
 		return fmt.Errorf("published %s has no recognized formula; run its update workflow", r.Tag)
 	}
-	if string(match[1]) != strings.TrimPrefix(r.Tag, "v") {
-		return fmt.Errorf("formula %s differs from published %s; run its update workflow", match[1], r.Tag)
+	if version != strings.TrimPrefix(r.Tag, "v") {
+		return fmt.Errorf("formula %s differs from published %s; run its update workflow", version, r.Tag)
 	}
 	return nil
 }
