@@ -3,8 +3,19 @@
 # Delegate to the shared pipeline so Code Rules gets the same verification, native
 # install tests, and protected publication as other tools, without a copied updater.
 name: Update Code Rules
+# Release Planner dispatches with tag and version. update-tool.yml resolves the latest
+# stable release itself instead of trusting the caller, so both are accepted and ignored.
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag from the dispatching release (ignored)
+        required: false
+        type: string
+      version:
+        description: Release version from the dispatching release (ignored)
+        required: false
+        type: string
 permissions:
   contents: read
   issues: write
