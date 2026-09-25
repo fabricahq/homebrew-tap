@@ -7,7 +7,7 @@
   "license": "MIT",
   "license_file": "LICENSE.md",
   "platforms": ["darwin_arm64", "darwin_amd64", "linux_arm64", "linux_amd64"],
-  "signer_workflow": ".github/workflows/release.yml",
+  "signer_workflow": ".github/workflows/release-planner.yml",
   "version_args": ["--version"],
   "test_args": ["--help"]
 }

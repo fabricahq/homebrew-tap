@@ -50,7 +50,7 @@ A leaked Releaser key can dispatch, cancel, rerun, or disable tap workflows and 
 
 [CR-7: OIDC dispatch service](https://linear.app/ohmygoshjosh/issue/CR-7/replace-shared-homebrew-trigger-keys-with-an-oidc-dispatch-service) tracks replacing the shared trigger key with a service that authorizes each product's repository, branch, and workflow. Formula integrity continues to depend on the protected publishing pipeline.
 
-For a working dispatch-job example, see the [Code Rules release workflow](https://github.com/fabricahq/code-rules/blob/main/.github/workflows/release.yml).
+Code Rules starts its update with [Release Planner](https://release-planner.fabricahq.com/customize/downstream/), which reads the Releaser App's credentials from its `downstream` environment as `DOWNSTREAM_APP_CLIENT_ID` and `DOWNSTREAM_APP_PRIVATE_KEY`. Its workflow is [release-planner.yml](https://github.com/fabricahq/code-rules/blob/main/.github/workflows/release-planner.yml).
 
 ### Protect formula publication
 
