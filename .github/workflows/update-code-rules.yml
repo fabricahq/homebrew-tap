@@ -24,3 +24,7 @@ jobs:
     uses: ./.github/workflows/update-tool.yml
     with:
       tool: code-rules
+    # A called workflow's job sees its environment's secrets only when the caller inherits
+    # secrets; without this, publish gets an empty FORMULA_APP_PRIVATE_KEY. Only the
+    # publish job, in the formula-publish environment, references a secret.
+    secrets: inherit
