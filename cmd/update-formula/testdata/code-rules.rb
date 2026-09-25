@@ -2,7 +2,6 @@
 class CodeRules < Formula
   desc "The package manager for engineering best practices"
   homepage "https://code-rules.fabricahq.com"
-  version "1.2.3"
   license "MIT"
 
   livecheck do

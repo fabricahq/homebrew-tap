@@ -146,6 +146,29 @@ func TestUpdateFormula(t *testing.T) {
 	}
 }
 
+// TestFormulaVersionComesFromURLs keeps the formula passing brew audit --strict, which rejects a version line that repeats the URLs' version.
+func TestFormulaVersionComesFromURLs(t *testing.T) {
+	r, sums := releaseFixture("1.2.3")
+	formula, err := renderFormula(testConfig, r, sums)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(formula, "\n  version ") {
+		t.Fatal("formula declares a version Homebrew already scans from its URLs")
+	}
+	if version, ok := formulaVersion([]byte(formula)); !ok || version != "1.2.3" {
+		t.Fatal("version not recognized from URLs", version, ok)
+	}
+	mixed := strings.Replace(formula, "/v1.2.3/", "/v1.2.4/", 1)
+	if _, ok := formulaVersion([]byte(mixed)); ok {
+		t.Fatal("formula with mixed URL versions recognized")
+	}
+	foreign := strings.Replace(formula, testConfig.repositoryURL()+"/releases/download/v1.2.3/", "https://example.com/v9.9.9/", 1)
+	if _, ok := formulaVersion([]byte(foreign)); ok {
+		t.Fatal("formula with a non-release URL recognized")
+	}
+}
+
 // TestStableVersionOrdering preserves numeric ordering without restricting version numbers to machine integers.
 func TestStableVersionOrdering(t *testing.T) {
 	for _, tag := range []string{"1.2.3", "v01.2.3", "v1.2.3\n", "v1.2.3+build", "v1.2.3-rc.1"} {
