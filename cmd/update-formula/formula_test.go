@@ -163,6 +163,10 @@ func TestFormulaVersionComesFromURLs(t *testing.T) {
 	if _, ok := formulaVersion([]byte(mixed)); ok {
 		t.Fatal("formula with mixed URL versions recognized")
 	}
+	foreign := strings.Replace(formula, testConfig.repositoryURL()+"/releases/download/v1.2.3/", "https://example.com/v9.9.9/", 1)
+	if _, ok := formulaVersion([]byte(foreign)); ok {
+		t.Fatal("formula with a non-release URL recognized")
+	}
 }
 
 // TestStableVersionOrdering preserves numeric ordering without restricting version numbers to machine integers.
