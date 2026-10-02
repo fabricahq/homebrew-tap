@@ -12,25 +12,25 @@ class CodeRules < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/fabricahq/code-rules/releases/download/v0.2.0/code-rules_0.2.0_darwin_arm64.tar.gz"
-      sha256 "78dd8672a5f495424fabeacc6eb989504041b7f29a6b8e01d0022308a0998142"
+      url "https://github.com/fabricahq/code-rules/releases/download/v0.3.0/code-rules_0.3.0_darwin_arm64.tar.gz"
+      sha256 "47722b4a8e51b85695b66eb71a9c0aea514421c285e57e5c118658642d63e5db"
     end
 
     on_intel do
-      url "https://github.com/fabricahq/code-rules/releases/download/v0.2.0/code-rules_0.2.0_darwin_amd64.tar.gz"
-      sha256 "a4c366b93dd5d7d8d1c4a02487a6e10e57590a1249d075deda2c48f6f42a6036"
+      url "https://github.com/fabricahq/code-rules/releases/download/v0.3.0/code-rules_0.3.0_darwin_amd64.tar.gz"
+      sha256 "7d3727ce450b47b6d2349f82c7c24389a82556f0e3abefe497fdae4632a0b99e"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/fabricahq/code-rules/releases/download/v0.2.0/code-rules_0.2.0_linux_arm64.tar.gz"
-      sha256 "a38be1da2b6d8d9bd8938136d1a397fdc8ced81c236b248ba7c495e92c9d6882"
+      url "https://github.com/fabricahq/code-rules/releases/download/v0.3.0/code-rules_0.3.0_linux_arm64.tar.gz"
+      sha256 "b37e73de22615de5b3f1844b018091f835e377db42354876c67f13b7a7b8247b"
     end
 
     on_intel do
-      url "https://github.com/fabricahq/code-rules/releases/download/v0.2.0/code-rules_0.2.0_linux_amd64.tar.gz"
-      sha256 "412783548d3b2cb90df17d533b9ca96531dec428931d3a4e27a78a5741de4190"
+      url "https://github.com/fabricahq/code-rules/releases/download/v0.3.0/code-rules_0.3.0_linux_amd64.tar.gz"
+      sha256 "7d78b778dfbd4d5d50b03766d0ae88995c7233a5584e845a2c777b2f31f1a764"
     end
   end
 
