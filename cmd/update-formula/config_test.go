@@ -30,10 +30,15 @@ func TestLoadConfig(t *testing.T) {
 	root := t.TempDir()
 	os.MkdirAll(filepath.Join(root, "tools"), 0755)
 	data, _ := json.Marshal(testConfig)
-	for _, value := range []string{string(data) + " {}", strings.Replace(string(data), `"name":`, `"unknown":1,"name":`, 1), strings.Replace(string(data), `"name":"code-rules"`, `"name":"different"`, 1)} {
-		os.WriteFile(filepath.Join(root, "tools", "code-rules.json"), []byte(value), 0600)
-		if _, err := loadConfig(root, "code-rules"); err == nil {
-			t.Fatal("accepted invalid configuration")
+	file := filepath.Join(root, "tools", testConfig.Name+".json")
+	os.WriteFile(file, data, 0600)
+	if _, err := loadConfig(root, testConfig.Name); err != nil {
+		t.Fatal("rejected the valid configuration each invalid one changes:", err)
+	}
+	for _, value := range []string{string(data) + " {}", strings.Replace(string(data), `"name":`, `"unknown":1,"name":`, 1), strings.Replace(string(data), `"name":"`+testConfig.Name+`"`, `"name":"different"`, 1)} {
+		os.WriteFile(file, []byte(value), 0600)
+		if _, err := loadConfig(root, testConfig.Name); err == nil {
+			t.Fatal("accepted invalid configuration", value)
 		}
 	}
 }
