@@ -12,24 +12,24 @@ class Syllabus < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/fabricahq/code-rules/releases/download/v1.2.3/syllabus_1.2.3_darwin_arm64.tar.gz"
+      url "https://github.com/fabricahq/syllabus/releases/download/v1.2.3/syllabus_1.2.3_darwin_arm64.tar.gz"
       sha256 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     end
 
     on_intel do
-      url "https://github.com/fabricahq/code-rules/releases/download/v1.2.3/syllabus_1.2.3_darwin_amd64.tar.gz"
+      url "https://github.com/fabricahq/syllabus/releases/download/v1.2.3/syllabus_1.2.3_darwin_amd64.tar.gz"
       sha256 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/fabricahq/code-rules/releases/download/v1.2.3/syllabus_1.2.3_linux_arm64.tar.gz"
+      url "https://github.com/fabricahq/syllabus/releases/download/v1.2.3/syllabus_1.2.3_linux_arm64.tar.gz"
       sha256 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     end
 
     on_intel do
-      url "https://github.com/fabricahq/code-rules/releases/download/v1.2.3/syllabus_1.2.3_linux_amd64.tar.gz"
+      url "https://github.com/fabricahq/syllabus/releases/download/v1.2.3/syllabus_1.2.3_linux_amd64.tar.gz"
       sha256 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     end
   end

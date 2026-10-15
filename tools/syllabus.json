@@ -1,6 +1,6 @@
 {
   "name": "syllabus",
-  "repository": "fabricahq/code-rules",
+  "repository": "fabricahq/syllabus",
   "binary": "syllabus",
   "description": "The package manager for your agent skills and rules",
   "homepage": "https://code-rules.fabricahq.com",

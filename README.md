@@ -28,7 +28,7 @@ brew uninstall syllabus
 
 | Tool | Description |
 | --- | --- |
-| [Syllabus](https://github.com/fabricahq/code-rules) | The package manager for your agent skills and rules |
+| [Syllabus](https://github.com/fabricahq/syllabus) | The package manager for your agent skills and rules |
 
 ## For maintainers
 

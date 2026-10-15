@@ -9,7 +9,7 @@ import (
 )
 
 var testConfig = toolConfig{
-	Name: "syllabus", Repository: "fabricahq/code-rules", Binary: "syllabus",
+	Name: "syllabus", Repository: "fabricahq/syllabus", Binary: "syllabus",
 	Description: "The package manager for your agent skills and rules", Homepage: "https://code-rules.fabricahq.com", License: "MIT", LicenseFile: "LICENSE.md",
 	Platforms: []string{"darwin_arm64", "darwin_amd64", "linux_arm64", "linux_amd64"}, SignerWorkflow: ".github/workflows/release.yml", VersionArgs: []string{"--version"}, TestArgs: []string{"--help"},
 }

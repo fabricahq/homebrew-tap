@@ -39,7 +39,7 @@ exit "${PROVENANCE_TEST_EXIT:-0}"
 	if len(args) != 10 {
 		t.Fatalf("wrong verifier arguments: %q", args)
 	}
-	expected := []string{"attestation", "verify", args[2], "--repo", "fabricahq/code-rules", "--signer-workflow", "fabricahq/code-rules/.github/workflows/release.yml", "--source-ref", "refs/heads/main", "--deny-self-hosted-runners"}
+	expected := []string{"attestation", "verify", args[2], "--repo", "fabricahq/syllabus", "--signer-workflow", "fabricahq/syllabus/.github/workflows/release.yml", "--source-ref", "refs/heads/main", "--deny-self-hosted-runners"}
 	if strings.Join(args, "\n") != strings.Join(expected, "\n") {
 		t.Fatalf("wrong verifier policy: %q", args)
 	}
