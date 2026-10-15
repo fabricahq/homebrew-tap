@@ -1,8 +1,8 @@
 {
-  "name": "code-rules",
+  "name": "syllabus",
   "repository": "fabricahq/code-rules",
-  "binary": "code-rules",
-  "description": "The package manager for engineering best practices",
+  "binary": "syllabus",
+  "description": "The package manager for your agent skills and rules",
   "homepage": "https://code-rules.fabricahq.com",
   "license": "MIT",
   "license_file": "LICENSE.md",

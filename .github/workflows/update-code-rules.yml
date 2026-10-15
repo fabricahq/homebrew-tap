@@ -1,6 +1,7 @@
-# Preserve the workflow name called by Code Rules' existing release job. Removing or
-# renaming this endpoint would let a CLI release succeed while its Homebrew dispatch fails.
-# Delegate to the shared pipeline so Code Rules gets the same verification, native
+# Preserve the workflow name called by the Syllabus release job, which Code Rules used
+# before it was renamed Syllabus. Removing or renaming this endpoint would let a CLI
+# release succeed while its Homebrew dispatch fails.
+# Delegate to the shared pipeline so Syllabus gets the same verification, native
 # install tests, and protected publication as other tools, without a copied updater.
 name: Update Code Rules
 # Release Planner dispatches with tag and version. update-tool.yml resolves the latest
@@ -23,7 +24,7 @@ jobs:
   update:
     uses: ./.github/workflows/update-tool.yml
     with:
-      tool: code-rules
+      tool: syllabus
     # A called workflow's job sees its environment's secrets only when the caller inherits
     # secrets; without this, publish gets an empty FORMULA_APP_PRIVATE_KEY. Only the
     # publish job, in the formula-publish environment, references a secret.

@@ -15,7 +15,7 @@ func releaseFixture(version string) (release, string) {
 	r := release{Tag: "v" + version, Draft: &no, Prerelease: &no, PublishedAt: "2026-09-18T00:00:00Z"}
 	var sums strings.Builder
 	for _, target := range testConfig.Platforms {
-		name := fmt.Sprintf("code-rules_%s_%s.tar.gz", version, target)
+		name := fmt.Sprintf("syllabus_%s_%s.tar.gz", version, target)
 		digest := strings.Repeat("a", 64)
 		r.Assets = append(r.Assets, asset{Name: name, Size: 1234, State: "uploaded", Digest: "sha256:" + digest, URL: testConfig.repositoryURL() + "/releases/download/" + r.Tag + "/" + name})
 		fmt.Fprintf(&sums, "%s  %s\n", digest, name)
@@ -31,11 +31,11 @@ func TestFormulaOutput(t *testing.T) {
 		t.Fatal(err)
 	}
 	if os.Getenv("UPDATE_GOLDEN") == "1" {
-		if err := os.WriteFile("testdata/code-rules.rb", []byte(formula), 0644); err != nil {
+		if err := os.WriteFile("testdata/syllabus.rb", []byte(formula), 0644); err != nil {
 			t.Fatal(err)
 		}
 	}
-	expected, err := os.ReadFile("testdata/code-rules.rb")
+	expected, err := os.ReadFile("testdata/syllabus.rb")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +95,7 @@ func TestRejectInvalidReleases(t *testing.T) {
 
 // TestUpdateFormula verifies idempotence, upgrades, immutable version assets, and refusal of same-version template changes.
 func TestUpdateFormula(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "Formula", "code-rules.rb")
+	path := filepath.Join(t.TempDir(), "Formula", "syllabus.rb")
 	r, sums := releaseFixture("1.2.3")
 	if changed, err := updateFormula(testConfig, path, r, sums); err != nil || !changed {
 		t.Fatal(changed, err)

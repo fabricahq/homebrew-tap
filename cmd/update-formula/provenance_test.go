@@ -74,7 +74,7 @@ func TestUnverifiedReleasePreservesFormula(t *testing.T) {
 		return []byte(sums), nil
 	}
 	for _, existing := range []bool{false, true} {
-		path := filepath.Join(t.TempDir(), "code-rules.rb")
+		path := filepath.Join(t.TempDir(), "syllabus.rb")
 		previous := []byte("existing trusted formula\n")
 		if existing {
 			if err := os.WriteFile(path, previous, 0644); err != nil {
