@@ -76,7 +76,7 @@ func TestReadURL(t *testing.T) {
 func TestRun(t *testing.T) {
 	for _, scenario := range []string{"publish", "no release", "missing checksums", "malformed JSON", "missing flags", "network failure"} {
 		t.Run(scenario, func(t *testing.T) {
-			path := filepath.Join(t.TempDir(), "Formula", "syllabus.rb")
+			path := filepath.Join(t.TempDir(), "Formula", "trailguide.rb")
 			r, sums := releaseFixture("1.2.3")
 			data, err := json.Marshal(r)
 			if err != nil {
@@ -110,7 +110,7 @@ func TestRun(t *testing.T) {
 			err = run(t.Context(), testConfig, fetch, func(context.Context, []byte) error { return nil }, path, &out)
 			switch scenario {
 			case "publish":
-				if err != nil || !strings.Contains(out.String(), "Prepared syllabus v1.2.3") {
+				if err != nil || !strings.Contains(out.String(), "Prepared trailguide v1.2.3") {
 					t.Fatal(err, out.String())
 				}
 				out.Reset()

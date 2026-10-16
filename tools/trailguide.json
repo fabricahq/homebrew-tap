@@ -1,9 +1,9 @@
 {
-  "name": "syllabus",
-  "repository": "fabricahq/syllabus",
-  "binary": "syllabus",
+  "name": "trailguide",
+  "repository": "fabricahq/trailguide",
+  "binary": "trailguide",
   "description": "The package manager for your agent skills and rules",
-  "homepage": "https://code-rules.fabricahq.com",
+  "homepage": "https://trailguide.fabricahq.com",
   "license": "MIT",
   "license_file": "LICENSE.md",
   "platforms": ["darwin_arm64", "darwin_amd64", "linux_arm64", "linux_amd64"],

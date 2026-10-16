@@ -9,13 +9,13 @@ import (
 )
 
 var testConfig = toolConfig{
-	Name: "syllabus", Repository: "fabricahq/syllabus", Binary: "syllabus",
-	Description: "The package manager for your agent skills and rules", Homepage: "https://code-rules.fabricahq.com", License: "MIT", LicenseFile: "LICENSE.md",
+	Name: "trailguide", Repository: "fabricahq/trailguide", Binary: "trailguide",
+	Description: "The package manager for your agent skills and rules", Homepage: "https://trailguide.fabricahq.com", License: "MIT", LicenseFile: "LICENSE.md",
 	Platforms: []string{"darwin_arm64", "darwin_amd64", "linux_arm64", "linux_amd64"}, SignerWorkflow: ".github/workflows/release.yml", VersionArgs: []string{"--version"}, TestArgs: []string{"--help"},
 }
 
 func TestLoadConfig(t *testing.T) {
-	c, err := loadConfig("../..", "syllabus")
+	c, err := loadConfig("../..", "trailguide")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,10 +74,10 @@ func TestSecondToolFormula(t *testing.T) {
 	c.Platforms = []string{"linux_amd64"}
 	r, sums := releaseFixture("1.2.3")
 	for i := range r.Assets {
-		r.Assets[i].Name = strings.ReplaceAll(r.Assets[i].Name, "syllabus_", "sample_")
+		r.Assets[i].Name = strings.ReplaceAll(r.Assets[i].Name, "trailguide_", "sample_")
 		r.Assets[i].URL = c.repositoryURL() + "/releases/download/v1.2.3/" + r.Assets[i].Name
 	}
-	sums = strings.ReplaceAll(sums, "syllabus_", "sample_")
+	sums = strings.ReplaceAll(sums, "trailguide_", "sample_")
 	formula, err := renderFormula(c, r, sums)
 	if err != nil {
 		t.Fatal(err)
@@ -87,7 +87,7 @@ func TestSecondToolFormula(t *testing.T) {
 			t.Fatalf("missing %q in %s", want, formula)
 		}
 	}
-	if strings.Contains(formula, "on_macos") || strings.Contains(formula, "syllabus") {
+	if strings.Contains(formula, "on_macos") || strings.Contains(formula, "trailguide") {
 		t.Fatal("leaked Code Rules configuration", formula)
 	}
 }

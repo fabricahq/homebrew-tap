@@ -7,28 +7,28 @@ A collection of [Homebrew](https://brew.sh/) formulas for installing Fabrica com
 Install a tool directly from this tap:
 
 ```sh
-brew install fabricahq/tap/syllabus
+brew install fabricahq/tap/trailguide
 ```
 
 Or add the tap first, then install tools by name:
 
 ```sh
 brew tap fabricahq/tap
-brew install syllabus
+brew install trailguide
 ```
 
 To upgrade or remove a tool:
 
 ```sh
-brew upgrade syllabus
-brew uninstall syllabus
+brew upgrade trailguide
+brew uninstall trailguide
 ```
 
 ## Tools
 
 | Tool | Description |
 | --- | --- |
-| [Syllabus](https://github.com/fabricahq/syllabus) | The package manager for your agent skills and rules |
+| [Trail Guide](https://github.com/fabricahq/trailguide) | The package manager for your agent skills and rules |
 
 ## For maintainers
 
