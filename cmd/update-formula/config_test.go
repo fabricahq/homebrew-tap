@@ -9,13 +9,13 @@ import (
 )
 
 var testConfig = toolConfig{
-	Name: "code-rules", Repository: "fabricahq/code-rules", Binary: "code-rules",
-	Description: "The package manager for engineering best practices", Homepage: "https://code-rules.fabricahq.com", License: "MIT", LicenseFile: "LICENSE.md",
+	Name: "trailguide", Repository: "fabricahq/trailguide", Binary: "trailguide",
+	Description: "The package manager for your agent skills and rules", Homepage: "https://trailguide.fabricahq.com", License: "MIT", LicenseFile: "LICENSE.md",
 	Platforms: []string{"darwin_arm64", "darwin_amd64", "linux_arm64", "linux_amd64"}, SignerWorkflow: ".github/workflows/release.yml", VersionArgs: []string{"--version"}, TestArgs: []string{"--help"},
 }
 
 func TestLoadConfig(t *testing.T) {
-	c, err := loadConfig("../..", "code-rules")
+	c, err := loadConfig("../..", "trailguide")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,10 +30,15 @@ func TestLoadConfig(t *testing.T) {
 	root := t.TempDir()
 	os.MkdirAll(filepath.Join(root, "tools"), 0755)
 	data, _ := json.Marshal(testConfig)
-	for _, value := range []string{string(data) + " {}", strings.Replace(string(data), `"name":`, `"unknown":1,"name":`, 1), strings.Replace(string(data), `"name":"code-rules"`, `"name":"different"`, 1)} {
-		os.WriteFile(filepath.Join(root, "tools", "code-rules.json"), []byte(value), 0600)
-		if _, err := loadConfig(root, "code-rules"); err == nil {
-			t.Fatal("accepted invalid configuration")
+	file := filepath.Join(root, "tools", testConfig.Name+".json")
+	os.WriteFile(file, data, 0600)
+	if _, err := loadConfig(root, testConfig.Name); err != nil {
+		t.Fatal("rejected the valid configuration each invalid one changes:", err)
+	}
+	for _, value := range []string{string(data) + " {}", strings.Replace(string(data), `"name":`, `"unknown":1,"name":`, 1), strings.Replace(string(data), `"name":"`+testConfig.Name+`"`, `"name":"different"`, 1)} {
+		os.WriteFile(file, []byte(value), 0600)
+		if _, err := loadConfig(root, testConfig.Name); err == nil {
+			t.Fatal("accepted invalid configuration", value)
 		}
 	}
 }
@@ -69,10 +74,10 @@ func TestSecondToolFormula(t *testing.T) {
 	c.Platforms = []string{"linux_amd64"}
 	r, sums := releaseFixture("1.2.3")
 	for i := range r.Assets {
-		r.Assets[i].Name = strings.ReplaceAll(r.Assets[i].Name, "code-rules_", "sample_")
+		r.Assets[i].Name = strings.ReplaceAll(r.Assets[i].Name, "trailguide_", "sample_")
 		r.Assets[i].URL = c.repositoryURL() + "/releases/download/v1.2.3/" + r.Assets[i].Name
 	}
-	sums = strings.ReplaceAll(sums, "code-rules_", "sample_")
+	sums = strings.ReplaceAll(sums, "trailguide_", "sample_")
 	formula, err := renderFormula(c, r, sums)
 	if err != nil {
 		t.Fatal(err)
@@ -82,7 +87,7 @@ func TestSecondToolFormula(t *testing.T) {
 			t.Fatalf("missing %q in %s", want, formula)
 		}
 	}
-	if strings.Contains(formula, "on_macos") || strings.Contains(formula, "code-rules") {
+	if strings.Contains(formula, "on_macos") || strings.Contains(formula, "trailguide") {
 		t.Fatal("leaked Code Rules configuration", formula)
 	}
 }

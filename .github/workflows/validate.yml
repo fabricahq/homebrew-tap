@@ -31,7 +31,7 @@ jobs:
           fi
       - run: go vet ./...
       - run: go test -race ./...
-      - run: ruby -c cmd/update-formula/testdata/code-rules.rb
+      - run: ruby -c cmd/update-formula/testdata/trailguide.rb
       - run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12 -shellcheck= -pyflakes=
   # The checked-in fixture catches incompatible template changes without a live release.
   formula-style:
@@ -50,5 +50,5 @@ jobs:
           HOMEBREW_NO_ANALYTICS: "1"
         run: |
           mkdir -p "$RUNNER_TEMP/style/Formula"
-          cp cmd/update-formula/testdata/code-rules.rb "$RUNNER_TEMP/style/Formula/code-rules.rb"
-          bash maintainers/check-formula-style.sh "$RUNNER_TEMP/style/Formula/code-rules.rb"
+          cp cmd/update-formula/testdata/trailguide.rb "$RUNNER_TEMP/style/Formula/trailguide.rb"
+          bash maintainers/check-formula-style.sh "$RUNNER_TEMP/style/Formula/trailguide.rb"

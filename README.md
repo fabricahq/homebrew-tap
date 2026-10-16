@@ -7,28 +7,28 @@ A collection of [Homebrew](https://brew.sh/) formulas for installing Fabrica com
 Install a tool directly from this tap:
 
 ```sh
-brew install fabricahq/tap/code-rules
+brew install fabricahq/tap/trailguide
 ```
 
 Or add the tap first, then install tools by name:
 
 ```sh
 brew tap fabricahq/tap
-brew install code-rules
+brew install trailguide
 ```
 
 To upgrade or remove a tool:
 
 ```sh
-brew upgrade code-rules
-brew uninstall code-rules
+brew upgrade trailguide
+brew uninstall trailguide
 ```
 
 ## Tools
 
 | Tool | Description |
 | --- | --- |
-| [Code Rules](https://github.com/fabricahq/code-rules) | The package manager for engineering best practices |
+| [Trail Guide](https://github.com/fabricahq/trailguide) | The package manager for your agent skills and rules |
 
 ## For maintainers
 

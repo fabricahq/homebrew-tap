@@ -39,7 +39,7 @@ exit "${PROVENANCE_TEST_EXIT:-0}"
 	if len(args) != 10 {
 		t.Fatalf("wrong verifier arguments: %q", args)
 	}
-	expected := []string{"attestation", "verify", args[2], "--repo", "fabricahq/code-rules", "--signer-workflow", "fabricahq/code-rules/.github/workflows/release.yml", "--source-ref", "refs/heads/main", "--deny-self-hosted-runners"}
+	expected := []string{"attestation", "verify", args[2], "--repo", "fabricahq/trailguide", "--signer-workflow", "fabricahq/trailguide/.github/workflows/release.yml", "--source-ref", "refs/heads/main", "--deny-self-hosted-runners"}
 	if strings.Join(args, "\n") != strings.Join(expected, "\n") {
 		t.Fatalf("wrong verifier policy: %q", args)
 	}
@@ -74,7 +74,7 @@ func TestUnverifiedReleasePreservesFormula(t *testing.T) {
 		return []byte(sums), nil
 	}
 	for _, existing := range []bool{false, true} {
-		path := filepath.Join(t.TempDir(), "code-rules.rb")
+		path := filepath.Join(t.TempDir(), "trailguide.rb")
 		previous := []byte("existing trusted formula\n")
 		if existing {
 			if err := os.WriteFile(path, previous, 0644); err != nil {

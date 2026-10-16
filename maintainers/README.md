@@ -16,7 +16,7 @@ A successful product release dispatches an update immediately. One shared Go upd
 
 1. **Define the release contract.** Use stable tags in `vMAJOR.MINOR.PATCH` form. Publish `<binary>_<version>_<os>_<arch>.tar.gz` archives and `SHA256SUMS` with lowercase SHA-256 hashes and two spaces before each filename. Each archive must contain the executable and configured license file at its root. Supported targets are `darwin_arm64`, `darwin_amd64`, `linux_arm64`, and `linux_amd64`.
 2. **Protect the product release.** Require reviewed changes to `main`, block force pushes and deletion, and enable immutable releases. Restrict the signing and publication environment to the `main` branch. After builds and tests pass, attest the exact `SHA256SUMS` file from the release workflow on `main`, using GitHub-hosted runners. Publish the stable release only after attestation succeeds.
-3. **Add one tool definition.** Copy [`tools/code-rules.json`](../tools/code-rules.json) to `tools/<name>.json`. Set the repository, executable, homepage, description, SPDX license, license filename, supported platforms, signing workflow, version arguments, and smoke-test arguments. The filename and `name` must match. Tests invoke the configured executable with literal arguments; configuration cannot contain arbitrary Ruby or shell code.
+3. **Add one tool definition.** Copy [`tools/trailguide.json`](../tools/trailguide.json) to `tools/<name>.json`. Set the repository, executable, homepage, description, SPDX license, license filename, supported platforms, signing workflow, version arguments, and smoke-test arguments. The filename and `name` must match. Tests invoke the configured executable with literal arguments; configuration cannot contain arbitrary Ruby or shell code.
 4. **Request organization credential access.** Ask an organization owner to add the product repository to the selected-repository lists for both `HOMEBREW_APP_PRIVATE_KEY` and `HOMEBREW_APP_CLIENT_ID`. Product maintainers do not need a PEM copy. Confirm that the repository's maintainers and workflows are trusted before granting access.
 5. **Connect the release trigger.** In the product repository, add a job that runs after a stable release is published. Use the shared Releaser App to create a short-lived installation token restricted to `fabricahq/homebrew-tap`, with only `permission-actions: write`. With that token, dispatch `update-tool.yml` on `main`, passing the tool name from `tools/<name>.json` as the `tool` input. Every product uses this shared workflow to update its formula.
 6. **Review and merge setup before releasing.** Validate the configuration and updater changes with the commands below. Merge the tap configuration and product release integration before publishing the first release, so the first attested release can pass the complete update pipeline.
@@ -50,7 +50,7 @@ A leaked Releaser key can dispatch, cancel, rerun, or disable tap workflows and 
 
 [CR-7: OIDC dispatch service](https://linear.app/ohmygoshjosh/issue/CR-7/replace-shared-homebrew-trigger-keys-with-an-oidc-dispatch-service) tracks replacing the shared trigger key with a service that authorizes each product's repository, branch, and workflow. Formula integrity continues to depend on the protected publishing pipeline.
 
-Code Rules starts its update with [Release Planner](https://release-planner.fabricahq.com/customize/downstream/), which reads the Releaser App's credentials from its `downstream` environment as `DOWNSTREAM_APP_CLIENT_ID` and `DOWNSTREAM_APP_PRIVATE_KEY`. Its workflow is [release-planner.yml](https://github.com/fabricahq/code-rules/blob/main/.github/workflows/release-planner.yml).
+Trail Guide starts its update with [Release Planner](https://release-planner.fabricahq.com/customize/downstream/), which reads the Releaser App's credentials from its `downstream` environment as `DOWNSTREAM_APP_CLIENT_ID` and `DOWNSTREAM_APP_PRIVATE_KEY`. Its workflow is [release-planner.yml](https://github.com/fabricahq/trailguide/blob/main/.github/workflows/release-planner.yml).
 
 ### Protect formula publication
 
@@ -82,7 +82,7 @@ Every tool must use the same provenance policy. The shared updater verifies `SHA
 
 Changed formulas then run `brew style`, `brew audit --strict --online`, `brew install`, and `brew test` on a fresh GitHub-hosted runner for each configured platform. A runner-architecture check prevents an ARM archive from passing only through Intel emulation. Publication waits for the entire matrix. Test jobs run release code without App secrets or write permissions; they never upload the artifact used for publishing.
 
-The generator retains the approved Code Rules tagline, including its leading “The”, with a `FormulaAudit/Desc` exception only when the generated description exactly matches that tagline. The shared style script checks all other cops, including strict cops. Audit uses `--skip-style` to avoid repeating these style checks; online and other strict audits remain enabled.
+The generator retains the approved Trail Guide tagline, including its leading “The”, with a `FormulaAudit/Desc` exception only when the generated description exactly matches that tagline. The shared style script checks all other cops, including strict cops. Audit uses `--skip-style` to avoid repeating these style checks; online and other strict audits remain enabled.
 
 ## Detect and recover from failed updates
 
@@ -95,7 +95,7 @@ GitHub can delay scheduled runs and disables schedules in public repositories af
 Generated formulas also support `brew livecheck`, using GitHub's latest stable release:
 
 ```sh
-brew livecheck fabricahq/tap/code-rules
+brew livecheck fabricahq/tap/trailguide
 ```
 
 Per-tool concurrency serializes updates with `cancel-in-progress: false`; the formula SHA check also prevents overwriting a concurrent human change. GitHub may replace an older pending run with a newer one. Each run resolves the latest release, so intermediate releases need not all produce commits.
@@ -115,8 +115,8 @@ Use the Go version in `go.mod` and an authenticated GitHub CLI for provenance ve
 ```sh
 go test -race ./...
 go vet ./...
-go run ./cmd/update-formula --tool code-rules --matrix
-go run ./cmd/update-formula --tool code-rules
+go run ./cmd/update-formula --tool trailguide --matrix
+go run ./cmd/update-formula --tool trailguide
 go run ./cmd/update-formula --check-all
 ```
 
