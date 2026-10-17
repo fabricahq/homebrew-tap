@@ -1,9 +1,8 @@
-# Preserve the workflow name called by the Trail Guide release job, which Code Rules used
-# before it was renamed Trail Guide. Removing or renaming this endpoint would let a CLI
-# release succeed while its Homebrew dispatch fails.
+# The Trail Guide release job dispatches this workflow by name, so renaming or removing it
+# would let a CLI release succeed while its Homebrew dispatch fails.
 # Delegate to the shared pipeline so Trail Guide gets the same verification, native
 # install tests, and protected publication as other tools, without a copied updater.
-name: Update Code Rules
+name: Update Trail Guide
 # Release Planner dispatches with tag and version. update-tool.yml resolves the latest
 # stable release itself instead of trusting the caller, so both are accepted and ignored.
 on:
