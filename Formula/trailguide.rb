@@ -12,25 +12,25 @@ class Trailguide < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/fabricahq/trailguide/releases/download/v0.4.0/trailguide_0.4.0_darwin_arm64.tar.gz"
-      sha256 "7db4e75e63d54a1124d7626b8c42c8497e94451e6998860afa317e2245c53d4d"
+      url "https://github.com/fabricahq/trailguide/releases/download/v0.5.1/trailguide_0.5.1_darwin_arm64.tar.gz"
+      sha256 "a6d64618d347f2db20e60b0043946859cb8d0d7f2953bd2bc1cfbb0acb6c4add"
     end
 
     on_intel do
-      url "https://github.com/fabricahq/trailguide/releases/download/v0.4.0/trailguide_0.4.0_darwin_amd64.tar.gz"
-      sha256 "faea99b5818f8f1300b218efaaeda4220abfac1451ba271b487b328e500f01d5"
+      url "https://github.com/fabricahq/trailguide/releases/download/v0.5.1/trailguide_0.5.1_darwin_amd64.tar.gz"
+      sha256 "d118631a3aca031594d11cb27cfcb26b21bf07df6acb14d53ce3c227ec86bb0a"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/fabricahq/trailguide/releases/download/v0.4.0/trailguide_0.4.0_linux_arm64.tar.gz"
-      sha256 "9682be17e3e7a5ec5d60e2879894221d18d7d79128cd28278554bdbd9f8cc594"
+      url "https://github.com/fabricahq/trailguide/releases/download/v0.5.1/trailguide_0.5.1_linux_arm64.tar.gz"
+      sha256 "14d0e2872358467a62e26e274deb68409232daa627523637cb62039a77ba1592"
     end
 
     on_intel do
-      url "https://github.com/fabricahq/trailguide/releases/download/v0.4.0/trailguide_0.4.0_linux_amd64.tar.gz"
-      sha256 "736a4af57949481f93e1909ad43ac4d420305d8c185a91c1e997561fb9e5ae7f"
+      url "https://github.com/fabricahq/trailguide/releases/download/v0.5.1/trailguide_0.5.1_linux_amd64.tar.gz"
+      sha256 "c68917e7b4b22886674066141cf5088a56716de8bfa8c942859eb9e9c8c35f2d"
     end
   end
 
