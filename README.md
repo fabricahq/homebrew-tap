@@ -10,10 +10,11 @@ Install a tool directly from this tap:
 brew install fabricahq/tap/trailguide
 ```
 
-Or add the tap first, then install tools by name:
+Or add and trust the tap first, then install tools by name. Homebrew 6 and later load formulas by short name only from taps you trust:
 
 ```sh
 brew tap fabricahq/tap
+brew trust fabricahq/tap
 brew install trailguide
 ```
 
