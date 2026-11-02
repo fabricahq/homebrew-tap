@@ -27,6 +27,7 @@ func readURL(ctx context.Context, client *http.Client, url string) ([]byte, erro
 	if request.URL.Scheme != "https" {
 		return nil, fmt.Errorf("release metadata requires HTTPS")
 	}
+	authorize(request, os.Getenv("GH_TOKEN"))
 	bounded := *client
 	bounded.Timeout = 30 * time.Second
 	bounded.CheckRedirect = func(req *http.Request, via []*http.Request) error {
@@ -57,6 +58,15 @@ func readURL(ctx context.Context, client *http.Client, url string) ([]byte, erro
 		return nil, fmt.Errorf("release metadata exceeds 1 MiB")
 	}
 	return data, nil
+}
+
+// authorize sends a token only to the GitHub API, because unauthenticated requests from
+// shared runner IPs hit the API's per-IP rate limit and fail with 403. Go drops the
+// header if a redirect leaves this host.
+func authorize(request *http.Request, token string) {
+	if token != "" && request.URL.Host == "api.github.com" {
+		request.Header.Set("Authorization", "Bearer "+token)
+	}
 }
 
 // run leaves the formula untouched when no release exists; other fetch or validation failures are errors.
