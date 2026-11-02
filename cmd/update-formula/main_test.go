@@ -73,6 +73,20 @@ func TestReadURL(t *testing.T) {
 }
 
 // TestRun verifies missing releases are no-ops while missing checksums and malformed metadata fail closed.
+func TestAuthorize(t *testing.T) {
+	for _, c := range []struct{ url, token, want string }{
+		{"https://api.github.com/repos/o/r/releases/latest", "t", "Bearer t"},
+		{"https://api.github.com/repos/o/r/releases/latest", "", ""},
+		{"https://github.com/o/r/releases/download/v1/SHA256SUMS", "t", ""},
+	} {
+		request := httptest.NewRequest(http.MethodGet, c.url, nil)
+		authorize(request, c.token)
+		if got := request.Header.Get("Authorization"); got != c.want {
+			t.Errorf("authorize(%q, %q) = %q, want %q", c.url, c.token, got, c.want)
+		}
+	}
+}
+
 func TestRun(t *testing.T) {
 	for _, scenario := range []string{"publish", "no release", "missing checksums", "malformed JSON", "missing flags", "network failure"} {
 		t.Run(scenario, func(t *testing.T) {

@@ -31,7 +31,10 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
+      # Authenticate release lookups; unauthenticated API calls from shared runners get 403.
       - run: go run ./cmd/update-formula --check-all
+        env:
+          GH_TOKEN: ${{ github.token }}
   # Report both version mismatches and errors that prevent determining freshness.
   notify:
     needs: check
